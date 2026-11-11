@@ -41,6 +41,16 @@
   .inl{display:inline-block;height:.62em;width:auto;aspect-ratio:3220/392;vertical-align:baseline;color:var(--blush);margin:0 .06em}
   .monomark{display:block;width:34px;height:auto;aspect-ratio:744/404;margin:0 auto 18px;color:var(--blush);opacity:.8}
 
+
+  /* floating Meet button */
+  .fab{position:fixed;z-index:40;right:max(18px,calc(env(safe-area-inset-right,0px) + 18px));bottom:max(18px,calc(env(safe-area-inset-bottom,0px) + 18px));
+    display:inline-flex;align-items:center;gap:10px;padding:14px 22px 14px 18px;border-radius:999px;text-decoration:none;
+    font-family:var(--wide,var(--sans));font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:var(--ink);
+    background:var(--sand,var(--blush));box-shadow:0 10px 30px rgba(0,0,0,.45),0 0 0 1px rgba(255,255,255,.08) inset;transition:transform .2s,box-shadow .2s}
+  .fab:hover{transform:translateY(-2px);box-shadow:0 14px 36px rgba(0,0,0,.55),0 0 24px rgba(194,97,31,.35)}
+  .fab svg{width:22px;height:auto;aspect-ratio:744/404;color:var(--ink)}
+  body.locked .fab{display:none}
+
   /* gate */
   #gate{position:fixed;inset:0;z-index:50;background:rgba(13,11,10,.97);display:flex;align-items:center;justify-content:center;padding:24px}
   #gate .card{max-width:420px;text-align:center}
@@ -296,6 +306,10 @@
   </div>
 </section>
 </main>
+
+<a class="fab" id="meet" href="https://t.me/DionystyBot" target="_blank" rel="noopener" aria-label="Meet DIONYSTY on Telegram">
+  <svg aria-hidden="true"><use href="#mono"/></svg>Meet
+</a>
 
 <footer><svg class="logo" role="img" aria-label="DIONYSTY"><use href="#wm"/></svg>Fifty people · One private world</footer>
 
