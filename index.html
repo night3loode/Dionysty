@@ -139,6 +139,13 @@
   .navfrieze{height:clamp(30px,3.4vw,46px);background-repeat:repeat-x;background-size:auto 100%;background-position:center 0;
     border-top:1px solid var(--line);box-shadow:inset 0 6px 10px -6px rgba(0,0,0,.8),0 8px 16px -8px rgba(0,0,0,.7);filter:brightness(.9)}
 
+
+  /* the adults-only condition stands apart from the seven principles */
+  .rules .req{background:linear-gradient(160deg,rgba(194,97,31,.22),rgba(94,44,18,.18) 60%,var(--ink))!important;position:relative;outline:1px solid rgba(216,180,131,.45);outline-offset:-1px}
+  .rules .req .reqtag{background:none;padding:0;color:var(--wine);font-family:var(--wide);font-size:9px;letter-spacing:.36em;text-transform:uppercase;color:var(--wine);margin-bottom:12px}
+  .badge18{display:inline-grid;place-items:center;width:44px;height:44px;margin-right:14px;border-radius:50%;vertical-align:middle;
+    border:1px solid var(--sand);font-family:var(--wide);font-size:11px;letter-spacing:.06em;color:var(--sand);background:rgba(17,11,7,.5)}
+
   /* gate */
   #gate{position:fixed;inset:0;z-index:50;background:rgba(13,11,10,.97);display:flex;align-items:center;justify-content:center;padding:24px}
   #gate .card{max-width:420px;text-align:center}
@@ -332,7 +339,7 @@
       <div><h3><i>V</i>Openness</h3><p>Desire, curiosity and difference are welcome here without judgement. Openness is never a licence to pressure, persuade or shame.</p></div>
       <div><h3><i>VI</i>Accountability</h3><p>Concerns are heard through a clear process. Responses are proportionate, recorded where appropriate and open to review.</p></div>
       <div><h3><i>VII</i>Autonomy</h3><p>Membership is voluntary. No member owes loyalty, exclusivity, money, personal disclosure, intimacy or continued participation. Anyone may leave without punishment.</p></div>
-      <div><h3><i>&nbsp;</i>Adults only</h3><p>Every member and guest is 18 or older, confirmed in person before attending any gathering.</p></div>
+      <div class="req"><p class="reqtag">The condition before all seven</p><h3><span class="badge18">18+</span>Adults only</h3><p>Every member and guest is 18 or older, confirmed in person before attending any gathering.</p></div>
     </div>
 
     <div class="sub2">At every gathering</div>
