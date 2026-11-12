@@ -645,10 +645,34 @@
 </section>
 </main>
 
-<a class="fab" id="meet" href="https://t.me/DionystyBot" target="_blank" rel="noopener" aria-label="Meet DIONYSTY on Telegram">
+<a class="fab" id="meet" href="https://telegram.me/DionystyBot" target="_blank" rel="noopener" aria-label="Meet DIONYSTY on Telegram">
   <svg aria-hidden="true"><use href="#mono"/></svg>Meet
 </a>
 
+<div id="meethelp" role="status" style="display:none;position:fixed;left:16px;right:16px;bottom:88px;z-index:60;max-width:420px;margin:0 auto;padding:14px 16px;border-radius:12px;background:#171614;color:#E7D5B5;border:1px solid #8E6A3A;font:15px/1.45 Georgia,serif;box-shadow:0 8px 30px rgba(0,0,0,.5)">Telegram didn’t open? Open the Telegram app and search <b>@DionystyBot</b>. Some mobile networks block Telegram links, so Wi-Fi can help.</div>
+<script>
+  // Open the Telegram app directly (tg://), which avoids t.me links that some Indian mobile networks break.
+  // If the app doesn't open, fall back to telegram.me and show how to find the bot by name.
+  (function(){
+    var a=document.getElementById('meet'), help=document.getElementById('meethelp');
+    if(!a) return;
+    a.addEventListener('click',function(e){
+      e.preventDefault();
+      var left=false;
+      function gone(){ if(document.visibilityState==='hidden') left=true; }
+      document.addEventListener('visibilitychange',gone);
+      window.addEventListener('blur',function(){left=true;},{once:true});
+      window.location.href='tg://resolve?domain=DionystyBot';
+      setTimeout(function(){
+        document.removeEventListener('visibilitychange',gone);
+        if(left) return;
+        help.style.display='block';
+        window.open('https://telegram.me/DionystyBot','_blank','noopener');
+        setTimeout(function(){help.style.display='none';},12000);
+      },1600);
+    });
+  })();
+</script>
 <footer><svg class="logo" role="img" aria-label="DIONYSTY"><use href="#wm"/></svg>Fifty people · One private world</footer>
 
 <script>
