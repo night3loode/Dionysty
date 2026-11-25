@@ -36,6 +36,16 @@ r=await call('3','dm/save',{id:10}); ok(r.s===404,'non-participant refused');
 // dm/del removes photo with suffix
 db.prepare("INSERT INTO dms (id,a,b,uid,body,at) VALUES (11,'1','2','1',?,0)").run('mx:'+mid+'|o');
 r=await call('1','dm/del',{id:11}); ok(r.j.ok&&!db.prepare('SELECT 1 FROM media WHERE id=?').get(mid),'delete removes photo');
+// legacy compatibility: old "img<id>" and bare-id bodies still delete the photo
+for (const [n,fmt] of [[12,id=>'img'+id],[13,id=>id],[14,id=>'mx:'+id],[15,id=>'mx:'+id+'|v']]) {
+  r=await call('1','media/put',{pid:'p2',blob:'data:image/jpeg;base64,AAAA'}); const lid=r.j.id;
+  db.prepare("INSERT INTO dms (id,a,b,uid,body,at) VALUES (?,'1','2','1',?,0)").run(n,fmt(lid));
+  r=await call('1','dm/del',{id:n}); ok(r.j.ok&&!db.prepare('SELECT 1 FROM media WHERE id=?').get(lid),'legacy body format removes photo: '+fmt('<id>'));
+}
+// non-photo bodies must not delete someone else's media
+r=await call('1','media/put',{pid:'p2',blob:'data:image/jpeg;base64,AAAA'}); const keep=r.j.id;
+db.prepare("INSERT INTO dms (id,a,b,uid,body,at) VALUES (16,'1','2','1','hello there',0)").run();
+r=await call('1','dm/del',{id:16}); ok(r.j.ok&&db.prepare('SELECT 1 FROM media WHERE id=?').get(keep),'plain text delete leaves other media');
 // history
 db.prepare("INSERT INTO circles (id,room,vibe,topic,hushed,cap,welcome,at,last) VALUES (20,'V','foyer','open',0,5,0,0,0),(21,'V','salon','hush',1,5,0,0,0)").run();
 db.prepare("INSERT INTO lines (cid,uid,body,at) VALUES (20,'1','open line',?),(21,'1','secret',?)").run(Date.now()-1000,Date.now()-1000);

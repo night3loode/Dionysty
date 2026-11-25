@@ -345,7 +345,7 @@ async function sweepExpiry(env) {
        Any photo older than 24h that no remaining (saved or recent) message points at is deleted,
        including photos that were uploaded but never sent. Photos kept in Drive (ext = 1) are dropped there first. */
     steps.push(['media', { run: async function () {
-      const orphan = "at < ?1 AND NOT EXISTS (SELECT 1 FROM dms d WHERE d.body = 'mx:' || media.id OR d.body LIKE 'mx:' || media.id || '|%' OR substr(d.body, 4) = media.id)";
+      const orphan = "at < ?1 AND NOT EXISTS (SELECT 1 FROM dms d WHERE d.body = media.id OR d.body = 'mx:' || media.id OR d.body LIKE 'mx:' || media.id || '|%' OR substr(d.body, 4) = media.id)";
       const ext = (await env.D1.prepare('SELECT id FROM media WHERE ext = 1 AND ' + orphan).bind(cutoff).all()).results || [];
       /* mediaDrop is true once the Drive blob is confirmed gone or its id is durably queued in mpurge;
          a row whose locator could not be queued is kept so the next sweep retries it */
@@ -4293,7 +4293,7 @@ async function v2Api(req, path, env, body, user, id, r) {
     else {
       /* read the photo id before the body is blanked (it used to be read afterwards, and "|o"/"|v" suffixes never matched, so photos were never deleted) */
       const old = await env.D1.prepare('SELECT body FROM dms WHERE id = ?1').bind(m.id).first();
-      const mx = /^mx:([0-9a-f]+)(\|[a-z]*)?$/.exec(String((old && old.body) || ''));
+      const mx = /^(?:mx:|img)([0-9a-f]+)(?:\|[a-z]*)?$/.exec(String((old && old.body) || '')) || /^([0-9a-f]{8,})$/.exec(String((old && old.body) || ''));
       await env.D1.prepare("UPDATE dms SET body = '' WHERE id = ?1").bind(m.id).run();
       await env.D1.prepare('INSERT INTO dmx (id, del) VALUES (?1, 1) ON CONFLICT(id) DO UPDATE SET del = 1').bind(m.id).run();
       if (mx) {
