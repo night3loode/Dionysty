@@ -94,6 +94,69 @@ const errRes = await call('media/get', { id: 'errcase' }, '222');
 bridgeStore.get = origGet;
 console.log('ERRRES', JSON.stringify(errRes)); t('bridge error -> 502 not gone', errRes.ok === false && !errRes.gone);
 
+
+// --- durable purge queue: failed bridge deletes must persist until confirmed ---
+
+// 1) burn-once with bridge del failing: content never re-served, blob id queued
+const put4 = await call('media/put', { pid: 'p2', blob: 'cHVyZ2Utb25jZQ==', once: 1 }, '111');
+const origDel = bridgeStore.delete.bind(bridgeStore);
+bridgeStore.delete = () => { throw new Error('del boom'); };
+const burn4 = await call('media/get', { id: put4.id }, '222');
+t('burn served despite del failure', burn4.ok === true && burn4.blob === 'cHVyZ2Utb25jZQ==');
+const gone4 = await call('media/get', { id: put4.id }, '222');
+t('burned not re-exposed while retry pending', gone4.gone === true && !gone4.blob);
+const pq1 = db.prepare('SELECT id, tries FROM mpurge WHERE id = ?1').get(put4.id);
+t('failed del queued in mpurge', !!pq1 && pq1.tries === 0);
+bridgeCalls.length = 0;
+await w.scheduled({}, env, {}); // retry while bridge still broken
+const pq2 = db.prepare('SELECT tries FROM mpurge WHERE id = ?1').get(put4.id);
+t('retry keeps id, tries incremented', !!pq2 && pq2.tries === 1);
+bridgeStore.delete = origDel; // bridge recovers
+await w.scheduled({}, env, {});
+t('retry physically deletes blob', bridgeCalls.some((c) => c.op === 'del' && c.id === 'm_' + put4.id) && !bridgeStore.has('m_' + put4.id));
+t('mpurge row cleared after confirm', !db.prepare('SELECT id FROM mpurge WHERE id = ?1').get(put4.id));
+
+// 2) dm/del with bridge del failing: media row gone from D1, blob id queued
+const put5 = await call('media/put', { pid: 'p2', blob: 'ZG1kZWwtcGF5bG9hZA==', once: 0 }, '111');
+db.prepare("INSERT INTO dms (a, b, uid, body, at) VALUES ('111','222','111',?1,?2)").run('img' + put5.id, Date.now());
+const dmsRow = db.prepare("SELECT id FROM dms WHERE body = ?1").get('img' + put5.id);
+bridgeStore.delete = () => { throw new Error('del boom'); };
+const delRes = await call('dm/del', { id: dmsRow.id }, '111');
+t('dm/del ok despite bridge failure', delRes.ok === true);
+t('dm/del removed media row', !db.prepare('SELECT id FROM media WHERE id = ?1').get(put5.id));
+t('dm/del queued purge', !!db.prepare('SELECT id FROM mpurge WHERE id = ?1').get(put5.id));
+bridgeStore.delete = origDel;
+await w.scheduled({}, env, {});
+t('dm/del purge completed on retry', !bridgeStore.has('m_' + put5.id) && !db.prepare('SELECT id FROM mpurge WHERE id = ?1').get(put5.id));
+
+// 3) sweep with bridge del failing: rows deleted, blob id queued, retried to confirm
+const put6 = await call('media/put', { pid: 'p2', blob: 'c3dlZXAtcGF5bG9hZA==', once: 0 }, '111');
+db.prepare("INSERT INTO dms (a, b, uid, body, at) VALUES ('111','222','111',?1,?2)").run('img' + put6.id, Date.now());
+const old6 = Date.now() - 2 * 86400000;
+db.prepare("UPDATE dms SET at = ?1 WHERE body = ?2").run(old6, 'img' + put6.id);
+db.prepare("UPDATE media SET at = ?1 WHERE id = ?2").run(old6, put6.id);
+bridgeStore.delete = () => { throw new Error('del boom'); };
+await w.scheduled({}, env, {});
+t('sweep removed media row despite bridge failure', !db.prepare('SELECT id FROM media WHERE id = ?1').get(put6.id));
+t('sweep queued purge', !!db.prepare('SELECT id FROM mpurge WHERE id = ?1').get(put6.id));
+bridgeStore.delete = origDel;
+await w.scheduled({}, env, {});
+t('sweep purge completed on retry', !bridgeStore.has('m_' + put6.id) && !db.prepare('SELECT id FROM mpurge WHERE id = ?1').get(put6.id));
+
+// 4) notfound counts as physically gone: no mpurge row
+const put7 = await call('media/put', { pid: 'p2', blob: 'Z29uZS1hbHJlYWR5', once: 1 }, '111');
+bridgeStore.delete('m_' + put7.id); // someone already deleted it
+const burn7 = await call('media/get', { id: put7.id }, '222');
+t('burn after external delete ok', burn7.ok === true);
+t('notfound not queued', !db.prepare('SELECT id FROM mpurge WHERE id = ?1').get(put7.id));
+
+
+// 5) purge sweep bounded per run: only 50 oldest processed per cron cycle
+for (let i = 0; i < 60; i++) db.prepare("INSERT INTO mpurge (id, at, tries) VALUES (?1, ?2, 0)").run('bulk' + i, Date.now() - 100000 + i);
+await w.scheduled({}, env, {});
+const remaining = db.prepare("SELECT COUNT(*) n FROM mpurge WHERE id LIKE 'bulk%'").get().n;
+t('purge sweep bounded to 50 per run', remaining === 10);
+
 const fails = results.filter((r) => r[0] === 'FAIL');
 for (const r of results) console.log(r[0], r[1]);
 console.log(fails.length ? `FAILURES: ${fails.length}` : 'ALL PASS');

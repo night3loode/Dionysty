@@ -337,12 +337,13 @@ async function sweepExpiry(env) {
   if (cutoff >= RETENTION_START) {
     const extIds = (await env.D1.prepare("SELECT id FROM media WHERE ext = 1 AND (id IN (SELECT body FROM dms WHERE at < ?1 AND id NOT IN (SELECT id FROM dm_save)) OR id IN (SELECT substr(body, 4) FROM dms WHERE at < ?1 AND id NOT IN (SELECT id FROM dm_save)))").bind(cutoff).all()).results || [];
     for (const x of extIds) await mediaDrop(env, x.id);
-    batch.push(env.D1.prepare('DELETE FROM media WHERE id IN (SELECT body FROM dms WHERE at < ?1 AND id NOT IN (SELECT id FROM dm_save))').bind(cutoff));
+    batch.push(env.D1.prepare("DELETE FROM media WHERE id IN (SELECT body FROM dms WHERE at < ?1 AND id NOT IN (SELECT id FROM dm_save)) OR id IN (SELECT substr(body, 4) FROM dms WHERE at < ?2 AND id NOT IN (SELECT id FROM dm_save))").bind(cutoff, cutoff));
     batch.push(env.D1.prepare('DELETE FROM dms WHERE at < ?1 AND id NOT IN (SELECT id FROM dm_save)').bind(cutoff));
     batch.push(env.D1.prepare('DELETE FROM dm_save WHERE id NOT IN (SELECT id FROM dms)'));
     batch.push(env.D1.prepare('DELETE FROM dmx WHERE id NOT IN (SELECT id FROM dms)'));
   }
   await env.D1.batch(batch);
+  try { await mediaPurgeSweep(env); } catch (e) { console.log('mediaPurgeSweep', e && e.message); }
 };
 
 // One-time: open /setup in a browser after deploying (re-run after changing secrets).
@@ -3846,6 +3847,7 @@ async function v2Ready(env) {
     'CREATE TABLE IF NOT EXISTS media (id TEXT PRIMARY KEY, a TEXT, b TEXT, uid TEXT, blob TEXT, once INTEGER, opened INTEGER DEFAULT 0, at INTEGER)',
     'CREATE TABLE IF NOT EXISTS dmx (id INTEGER PRIMARY KEY, edited INTEGER DEFAULT 0, del INTEGER DEFAULT 0)',
     'CREATE TABLE IF NOT EXISTS dm_save (id INTEGER PRIMARY KEY, by TEXT, at INTEGER)',
+    'CREATE TABLE IF NOT EXISTS mpurge (id TEXT PRIMARY KEY, at INTEGER, tries INTEGER DEFAULT 0)',
   ];
   await env.D1.batch(q.map(function (s) { return env.D1.prepare(s); }));
   try { await env.D1.prepare('ALTER TABLE media ADD ext INTEGER DEFAULT 0').run(); } catch (e) {}
@@ -3856,22 +3858,46 @@ async function v2Ready(env) {
 async function mediaStore(env, id, blob) {
   if (!env.MEDIA_BRIDGE_URL || !env.MEDIA_KEY) return false;
   try {
-    const r = await fetch(env.MEDIA_BRIDGE_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ key: env.MEDIA_KEY, op: 'put', id: 'm_' + id, b64: blob }) });
+    const r = await fetch(env.MEDIA_BRIDGE_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, signal: AbortSignal.timeout(15000), body: JSON.stringify({ key: env.MEDIA_KEY, op: 'put', id: 'm_' + id, b64: blob }) });
     const j = await r.json(); return !!(j && j.ok);
   } catch (e) { return false; }
 }
 async function mediaFetch(env, id) {
   if (!env.MEDIA_BRIDGE_URL || !env.MEDIA_KEY) return null;
   try {
-    const r = await fetch(env.MEDIA_BRIDGE_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ key: env.MEDIA_KEY, op: 'get', id: 'm_' + id }) });
+    const r = await fetch(env.MEDIA_BRIDGE_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, signal: AbortSignal.timeout(15000), body: JSON.stringify({ key: env.MEDIA_KEY, op: 'get', id: 'm_' + id }) });
     const j = await r.json();
     if (j && j.ok) return String(j.b64 || '');
     return j && j.error === 'notfound' ? null : undefined;
   } catch (e) { return undefined; }
 }
 async function mediaDrop(env, id) {
+  // true = blob confirmed physically gone, or its id is durably queued for retry (safe to remove the D1 row)
+  if (!env.MEDIA_BRIDGE_URL || !env.MEDIA_KEY) return true;
+  try {
+    const r = await fetch(env.MEDIA_BRIDGE_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, signal: AbortSignal.timeout(8000), body: JSON.stringify({ key: env.MEDIA_KEY, op: 'del', id: 'm_' + id }) });
+    const j = await r.json();
+    if (j && (j.ok || j.error === 'notfound')) return true; // physically gone (or never stored)
+  } catch (e) {}
+  // delete unconfirmed: persist the blob id BEFORE the caller removes the D1 row, so a failed enqueue cannot silently lose the locator
+  try { await env.D1.prepare('INSERT OR REPLACE INTO mpurge (id, at, tries) VALUES (?1, ?2, 0)').bind(id, Date.now()).run(); return true; } catch (e) { console.log('mpurge enqueue failed for', id, e && e.message); return false; }
+}
+async function mediaPurgeSweep(env) {
   if (!env.MEDIA_BRIDGE_URL || !env.MEDIA_KEY) return;
-  try { await fetch(env.MEDIA_BRIDGE_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ key: env.MEDIA_KEY, op: 'del', id: 'm_' + id }) }); } catch (e) {}
+  let pend = [];
+  try { pend = (await env.D1.prepare('SELECT id FROM mpurge ORDER BY at LIMIT 50').all()).results || []; } catch (e) { return; }
+  for (const x of pend) {
+    let done = false;
+    try {
+      const r = await fetch(env.MEDIA_BRIDGE_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, signal: AbortSignal.timeout(8000), body: JSON.stringify({ key: env.MEDIA_KEY, op: 'del', id: 'm_' + x.id }) });
+      const j = await r.json();
+      done = !!(j && (j.ok || j.error === 'notfound'));
+    } catch (e) {}
+    try {
+      if (done) await env.D1.prepare('DELETE FROM mpurge WHERE id = ?1').bind(x.id).run();
+      else await env.D1.prepare('UPDATE mpurge SET tries = tries + 1 WHERE id = ?1').bind(x.id).run();
+    } catch (e) {}
+  }
 }
 function v2Pair(a, b) { a = String(a); b = String(b); return a < b ? [a, b] : [b, a]; }
 async function v2Person(env, uid) { return await env.D1.prepare('SELECT uid, pid, alias, room, member, temples, since FROM people WHERE uid = ?1').bind(String(uid)).first(); }
@@ -4115,9 +4141,10 @@ async function v2Api(req, path, env, body, user, id, r) {
     const m = await env.D1.prepare('SELECT id FROM dms WHERE id = ?1 AND uid = ?2').bind(Number(b.id) || 0, me).first();
     if (!m) return J({ ok: false, error: 'Not your message.' });
     if (p === 'dm/edit') { const body2 = String(b.body || ''); if (!body2 || body2.length > 20000) return J({ ok: false }); await env.D1.prepare('UPDATE dms SET body = ?2 WHERE id = ?1').bind(m.id, body2).run(); await env.D1.prepare('INSERT INTO dmx (id, edited) VALUES (?1, 1) ON CONFLICT(id) DO UPDATE SET edited = 1').bind(m.id).run(); }
-    else { await env.D1.prepare("UPDATE dms SET body = '' WHERE id = ?1").bind(m.id).run(); await env.D1.prepare('INSERT INTO dmx (id, del) VALUES (?1, 1) ON CONFLICT(id) DO UPDATE SET del = 1').bind(m.id).run(); const mids = (await env.D1.prepare("SELECT id FROM media WHERE uid = ?1 AND ext = 1 AND id IN (SELECT substr(body, 4) FROM dms WHERE id = ?2)").bind(me, m.id).all()).results || [];
-    for (const x of mids) await mediaDrop(env, x.id);
-    await env.D1.prepare("DELETE FROM media WHERE uid = ?1 AND id IN (SELECT substr(body, 4) FROM dms WHERE id = ?2)").bind(me, m.id).run(); }
+    else { const mid = ((await env.D1.prepare('SELECT substr(body, 4) AS mid FROM dms WHERE id = ?1').bind(m.id).first()) || {}).mid;
+    await env.D1.prepare("UPDATE dms SET body = '' WHERE id = ?1").bind(m.id).run(); await env.D1.prepare('INSERT INTO dmx (id, del) VALUES (?1, 1) ON CONFLICT(id) DO UPDATE SET del = 1').bind(m.id).run();
+    if (mid) { const mx = await env.D1.prepare('SELECT id, ext FROM media WHERE id = ?1 AND uid = ?2').bind(mid, me).first();
+      if (mx) { if (mx.ext) await mediaDrop(env, mx.id); await env.D1.prepare('DELETE FROM media WHERE id = ?1').bind(mx.id).run(); } } }
     return J({ ok: true });
   }
   if (p === 'dm/flags') { const ids = (b.ids || []).slice(0, 300).map(Number).filter(isFinite); if (!ids.length) return J({ ok: true, flags: {} }); const live = {}; ((await env.D1.prepare('SELECT id, a, b FROM dms WHERE id IN (' + ids.join(',') + ')').all()).results || []).forEach(function (x) { if (String(x.a) === String(me) || String(x.b) === String(me)) live[x.id] = 1; }); const o = {}; const rows = (await env.D1.prepare('SELECT id, edited, del FROM dmx WHERE id IN (' + ids.join(',') + ')').all()).results || []; rows.forEach(function (x) { if (live[x.id]) { o[x.id] = { edited: !!x.edited, del: !!x.del }; } }); const sv = (await env.D1.prepare('SELECT id, by FROM dm_save WHERE id IN (' + ids.join(',') + ')').all()).results || []; sv.forEach(function (x) { if (live[x.id]) { o[x.id] = o[x.id] || {}; o[x.id].saved = true; o[x.id].saved_by_me = String(x.by) === String(me); } }); ids.forEach(function (x) { if (!o[x] && !live[x]) o[x] = { gone: true }; }); return J({ ok: true, flags: o }); }
