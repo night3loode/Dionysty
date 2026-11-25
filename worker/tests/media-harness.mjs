@@ -17,6 +17,12 @@ db.exec("CREATE TABLE msgs (id INTEGER PRIMARY KEY AUTOINCREMENT, room TEXT, uid
 db.exec("CREATE TABLE sl_msgs (id INTEGER PRIMARY KEY AUTOINCREMENT, at INTEGER, who TEXT, label TEXT, body TEXT)");
 db.exec("CREATE TABLE dms (id INTEGER PRIMARY KEY AUTOINCREMENT, a TEXT, b TEXT, uid TEXT, body TEXT, at INTEGER, seen INTEGER DEFAULT 0)");
 db.exec("INSERT INTO people (uid, pid, alias, member, room) VALUES ('111','p1','Alice',1,'Village 1'),('222','p2','Bob',1,'Village 1')");
+// photos can only go to someone you're bonded or talking with
+db.exec("CREATE TABLE bonds (a TEXT, b TEXT, status TEXT, at INTEGER, PRIMARY KEY (a, b))");
+db.exec("CREATE TABLE blocks (a TEXT, b TEXT, at INTEGER, PRIMARY KEY (a, b))");
+db.exec("CREATE TABLE talks (a TEXT, b TEXT, at INTEGER, PRIMARY KEY (a, b))");
+db.exec("INSERT INTO people (uid, pid, alias, member, room) VALUES ('333','p3','Cat',1,'Village 1')");
+db.exec("INSERT INTO bonds (a, b, status, at) VALUES ('111','222','bonded',0)");
 
 const bridgeCalls = [];
 const bridgeStore = new Map();
@@ -51,6 +57,14 @@ t('blob external, d1 empty', row.ext === 1 && row.blob === '');
 const get = await call('media/get', { id: put.id }, '222');
 t('get roundtrip', get.ok === true && get.blob === 'aGVsbG8tY2lwaGVy' && get.once === false);
 
+// only plain base64 (optionally a data:image/video URL) is accepted, and only to a bond or talk
+const evil = await call('media/put', { pid: 'p2', blob: 'x" onerror="alert(1)', once: 0 }, '111');
+t('script-like blob refused', evil.ok === false);
+const dataUrl = await call('media/put', { pid: 'p2', blob: 'data:image/jpeg;base64,/9j/4AAQ', once: 0 }, '111');
+t('data:image URL accepted', dataUrl.ok === true);
+const stranger = await call('media/put', { pid: 'p3', blob: 'aGVsbG8=', once: 0 }, '111');
+t('no bond or talk refused', stranger.ok === false);
+
 // once: sender sealed, receiver burns + bridge del
 const put2 = await call('media/put', { pid: 'p2', blob: 'b25jZS1ibG9i', once: 1 }, '111');
 const sealed = await call('media/get', { id: put2.id }, '111');
@@ -79,8 +93,10 @@ t('fallback get ok', get3.blob === 'ZmFsbGJhY2s=');
 const old = Date.now() - 2 * 86400000;
 db.prepare("INSERT INTO dms (a, b, uid, body, at) VALUES ('111','222','111',?1,?2)").run('img' + put.id, old);
 db.prepare("UPDATE media SET at = ?1 WHERE id = ?2").run(old, put.id);
-// ensure cutoff >= RETENTION_START: RETENTION_START constant in worker is 1795619418620 (Nov 24 2026)
-await w.scheduled({}, env, {});
+// the sweep only deletes once now - 24h >= RETENTION_START (1795619418620 = 25 Nov 2026 15:10 UTC),
+// so run it with the clock moved past the grace period, or the test depends on the day it runs
+const realNow = Date.now; Date.now = () => 1795619418620 + 2 * 86400000 + 3600000;
+try { await w.scheduled({}, env, {}); } finally { Date.now = realNow; }
 t('sweep bridge del', bridgeCalls.filter((c) => c.op === 'del' && c.id === 'm_' + put.id).length >= 1);
 t('sweep dms row deleted', db.prepare('SELECT COUNT(*) n FROM dms WHERE id NOT IN (SELECT id FROM dm_save)').get().n === 0);
 

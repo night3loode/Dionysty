@@ -791,7 +791,7 @@ window.hsPaint=paint;try{hsPaint=paint}catch(e){}
   var c0=call0;
   /* photos and videos are drawn into the page, so only accept a plain base64 image/video data URL
      from the server; anything else (e.g. text built to break out of src="…") is treated as gone */
-  var MEDIA_OK=/^data:(image\/(jpeg|png|webp|gif)|video\/(mp4|webm|quicktime));base64,[A-Za-z0-9+\/]+={0,2}$/;
+  var MEDIA_OK=/^(data:(image\/(jpeg|png|webp|gif)|video\/(mp4|webm|quicktime));base64,)?[A-Za-z0-9+\/]+={0,2}$/;
   call0=function(path,body){
     if(path==='sq/v2/media/get')return c0.apply(this,arguments).then(function(r){
       if(r&&r.blob&&!MEDIA_OK.test(String(r.blob)))return {ok:true,gone:true};
