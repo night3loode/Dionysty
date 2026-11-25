@@ -13,7 +13,7 @@ Live-code baseline of Dionysty, synced from production on 2026-11-25.
 
 ## Worker environment (names only, values live in Cloudflare)
 
-Secrets/vars the Worker reads: `BOT_TOKEN`, `WEBHOOK_SECRET`, `SHEET_URL`, `TEAM_CHAT_ID`, `INVITE_CHAT_ID`, `FOUNDER_IDS`, `GOD_SETUP_HASH`, plus optional settings (`CALL_LINK`, `CALL_HOURS`, `CALL_MINUTES`, `CALL_TIMES`, `CITY_NAME`, `DEFAULT_ROOM`, `BOND_TARGET`, `VOTE_HOURS`, `VOUCH_FOR`, `MEMBER_PHOTOS`, `LAB`) and the D1 binding `D1`. See the header comment of `worker/worker.js`.
+Secrets/vars the Worker reads: `BOT_TOKEN`, `WEBHOOK_SECRET`, `SHEET_URL`, `TEAM_CHAT_ID`, `INVITE_CHAT_ID`, `FOUNDER_IDS`, `GOD_SETUP_HASH`, plus optional settings (`CALL_LINK`, `CALL_HOURS`, `CALL_MINUTES`, `CALL_TIMES`, `CITY_NAME`, `DEFAULT_ROOM`, `BOND_TARGET`, `VOTE_HOURS`, `VOUCH_FOR`, `MEMBER_PHOTOS`, `LAB`, `BROADCAST_BATCH`) and the D1 binding `D1`. See the header comment of `worker/worker.js`.
 
 ## Deployment contract (Worker)
 
@@ -26,3 +26,11 @@ Every Worker script upload must carry the complete binding metadata, not just th
 - cron trigger: every 5 minutes
 
 Before and after each upload, read the Worker's settings back and compare the binding list. Merging to `main` never deploys.
+
+
+## Starlove notifications and broadcasts
+
+- Broadcasts are sent from the Starlove console (`/starlove` on the Worker), Broadcast tab. They're queued in D1 (`bcast`, `bcast_q`) and go out in batches of `BROADCAST_BATCH` (default 20): right away, while the console is open, and on every cron run.
+- People choose what they get with `/notifications` in the bot, or "Turn these off" under a message. The kinds are new private messages, messages about to disappear, Houses and events, and news from Starlove. Messages from the team and about membership always reach them.
+- After deploying, open `/setup` once so the bot's command list includes `/notifications`.
+- `BROADCAST_BATCH` is optional. If you set it, add it to the `plain_text` list in the deployment contract above, so later uploads don't drop it.

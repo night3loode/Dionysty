@@ -323,6 +323,8 @@ const dyMain = {
     try { await sweepVotes(env); } catch (e) { console.log('sweepVotes', e && e.message); }
     try { await sweepExpiry(env); } catch (e) { console.log('sweepExpiry', e && e.message); }
     try { await sweepOrphans(env); } catch (e) { console.log('sweepOrphans', e && e.message); }
+    try { await ntExpiring(env); } catch (e) { console.log('ntExpiring', e && e.message); }
+    try { await bcPump(env); } catch (e) { console.log('bcPump', e && e.message); }
   },
 };
 /* retention: space 7d, starlove 90d, unsaved DMs and their media 24h from creation */
@@ -408,6 +410,8 @@ async function forgetAll(env, uid, opts) {
       ['fly_ask', 'DELETE FROM fly_ask WHERE a = ?1 OR b = ?1'],
       ['fly_pos', 'DELETE FROM fly_pos WHERE uid = ?1'],
       ['sl_msgs', "DELETE FROM sl_msgs WHERE dest = 'tg:' || ?1"],
+      ['note_prefs', 'DELETE FROM note_prefs WHERE uid = ?1'],
+      ['bcast_q', 'DELETE FROM bcast_q WHERE uid = ?1'],
     ];
     /* photos kept in Drive (ext = 1) are deleted there before their rows go */
     /* a photo whose Drive delete could not be confirmed or queued keeps its row, so a later /forget or sweep retries it */
@@ -475,6 +479,7 @@ async function setup(url, env) {
       { command: 'rules', description: 'Members: house rules for messages' },
       { command: 'report', description: 'Members: report a breach, in or outside the bot' },
       { command: 'privacy', description: 'See exactly what we hold about you' },
+      { command: 'notifications', description: 'Choose what Starlove tells you about' },
       { command: 'forget', description: 'Delete everything we hold about you' },
       { command: 'charter', description: 'Read the Charter' },
     ],
@@ -515,6 +520,7 @@ async function onPrivate(m, cmd, env) {
     return say(env, id, TEXT.forgotten);
   }
   if (cmd === '/privacy') return say(env, id, TEXT.privacy(r));
+  if (cmd === '/notifications') return ntMenu(env, id);
   if (cmd === '/charter') return say(env, id, TEXT.charter);
   if (cmd === '/mycode') return say(env, id, r && r.code ? TEXT.myCode(r.code, !!r.member) : TEXT.notYet);
   if (cmd === '/code') {
@@ -637,6 +643,7 @@ async function onButton(q, env) {
     });
 
   // Votes and vouch confirmations (members, in private) and founder decisions (team group).
+  if (kind === 'nt') return ntButton(env, q, ack, setKb);
   if (kind === 'v') return onVoteButton(env, q, ack, setKb);
   if (['wel', 'dm', 'blk', 'rep', 'ublk', 'rok'].includes(kind)) return onMemberButton(env, q, kind, val, ack, setKb);
   if (['sw', 'swy', 'swn'].includes(kind)) return onSwapButton(env, q, kind, val, ack, setKb);
@@ -2718,9 +2725,9 @@ async function hApi(req, path, env, body, me, r, room, now) {
       await D1.prepare('INSERT INTO dms (a, b, uid, body, at) VALUES (?1, ?2, ?3, ?4, ?5)').bind(a, b, me, text, now).run();
       const pres = await D1.prepare('SELECT seen FROM presence WHERE uid = ?1').bind(t.uid).first();
       const note = await D1.prepare('SELECT at FROM dmnote WHERE to_uid = ?1 AND from_uid = ?2').bind(t.uid, me).first();
-      if ((!pres || now - pres.seen > 120000) && (!note || now - note.at > 600000) && !(await hQuiet(env, t.uid))) {
+      if ((!pres || now - pres.seen > 120000) && (!note || now - note.at > 600000)) {
         await D1.prepare('INSERT OR REPLACE INTO dmnote (to_uid, from_uid, at) VALUES (?1, ?2, ?3)').bind(t.uid, me, now).run();
-        await say(env, t.uid, '✦ ' + (r.alias || 'Someone') + ' wrote to you in the Village.', [[{ text: 'Open messages', url: SQ_BASE + '#dm' }]]);
+        await notify(env, t.uid, 'dm', '✦ ' + (r.alias || 'Someone') + ' wrote to you in the Village.', { text: 'Open messages', url: SQ_BASE + '#dm' });
       }
       return apiJson(req, { ok: true });
     }
@@ -3800,7 +3807,7 @@ onPrivate = async function (m, cmd, env) {
       if (r && r.step === 'chatting' && r.member && !c && !(r.report && r.report.step === 'describe')) {
         try { relay = !!(await peerFor(env, id, r, m)); } catch (e) { relay = true; }
       }
-      if (!relay && c !== '/forget') {
+      if (!relay && c !== '/forget' && c !== '/notifications') {
         const who = ((r && r.alias) || (m.from.first_name || 'Someone')) + (m.from.username ? ' @' + m.from.username : '');
         await slForward(env, 'Telegram', who, text, 'tg:' + chat);
       }
@@ -3867,6 +3874,7 @@ async function godFetch(req, env) {
   const sess = await godSession(env, b.token);
   if (!sess) return godJson({ ok: false, error: 'auth' }, 401);
   await slReady(env);
+  if (p.indexOf('broadcast/') === 0) { const r = await bcApi(p, b, env); if (r) return r; }
   if (p === 'logout') { await env.DB.delete('god:sess:' + (await godSha(b.token))); await godLog(env, 'Starlove', 'signed out'); return godJson({ ok: true }); }
   if (p === 'inbox') {
     const rows = (await env.D1.prepare('SELECT id, at, who, label, body, dest, replied_at, reply, replied_by FROM sl_msgs ORDER BY id DESC LIMIT 150').all()).results || [];
@@ -3900,7 +3908,7 @@ h1{font:300 40px/1.05 'Cormorant Garamond',serif;margin:10px 0 6px}h1 em{color:v
 p.sub{color:var(--muted);margin:0 0 22px}
 .card{border:1px solid var(--line);border-radius:20px;background:rgba(42,16,24,.55);padding:18px;margin:14px 0}
 label{display:block;font:400 9px Michroma,sans-serif;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin:14px 0 6px}
-input,textarea{width:100%;border:1px solid var(--line);border-radius:14px;background:rgba(26,12,17,.7);color:var(--ivory);font:400 16px Jost,sans-serif;padding:13px 15px;outline:none}
+input,textarea,select{width:100%;border:1px solid var(--line);border-radius:14px;background:rgba(26,12,17,.7);color:var(--ivory);font:400 16px Jost,sans-serif;padding:13px 15px;outline:none}
 input:focus,textarea:focus{border-color:var(--gold)}
 button{border:0;border-radius:24px;background:var(--gold);color:var(--ink);font:400 10px Michroma,sans-serif;letter-spacing:.24em;text-transform:uppercase;padding:15px 20px;margin-top:16px;cursor:pointer;width:100%}
 button.ghost{background:transparent;border:1px solid var(--line);color:var(--ivory)}
@@ -3935,13 +3943,43 @@ api('setup/finish',{code:code,password:a,otp:document.getElementById('ot').value
 function login(){A.innerHTML=head('Welcome, <em>Starlove</em>','')+'<div class="card"><label>Password</label><input id="pw" type="password" autocomplete="current-password"><label>Code from the authenticator (or a backup code)</label><input id="ot" autocomplete="one-time-code"><button id="go">Enter</button><div class="err" id="er"></div></div>';
 var go=function(){var b=document.getElementById('go');b.disabled=true;api('login',{password:document.getElementById('pw').value,otp:document.getElementById('ot').value}).then(function(r){b.disabled=false;if(!r.ok){document.getElementById('er').textContent=r.error||'Try again';return}T=r.token;sessionStorage.setItem('sl_t',T);if(r.backupLeft<3)alert('Only '+r.backupLeft+' backup codes left.');con()})};
 document.getElementById('go').onclick=go;document.getElementById('ot').onkeydown=function(e){if(e.key==='Enter')go()}}
-function con(){A.innerHTML='<div class="top"><div class="eb">DIONYSTY · Starlove</div><button class="ghost" id="out" style="width:auto;margin:0;padding:9px 14px">Sign out</button></div><h1>Every <em>star</em></h1><div class="tabs"><button id="t1">Inbox</button><button id="t2">Log</button></div><div class="card" id="pane"><p class="note">Loading…</p></div>';
+function con(){A.innerHTML='<div class="top"><div class="eb">DIONYSTY · Starlove</div><button class="ghost" id="out" style="width:auto;margin:0;padding:9px 14px">Sign out</button></div><h1>Every <em>star</em></h1><div class="tabs"><button id="t1">Inbox</button><button id="t3">Broadcast</button><button id="t2">Log</button></div><div class="card" id="pane"><p class="note">Loading…</p></div>';
 document.getElementById('out').onclick=function(){api('logout').then(function(){T='';sessionStorage.removeItem('sl_t');login()})};
-document.getElementById('t1').onclick=function(){tab='inbox';paint()};document.getElementById('t2').onclick=function(){tab='log';paint()};paint();clearInterval(timer);timer=setInterval(function(){if(tab==='inbox'&&!(document.activeElement&&document.activeElement.tagName==='TEXTAREA'))paint()},15000)}
-function paint(){document.getElementById('t1').className=tab==='inbox'?'':'off';document.getElementById('t2').className=tab==='log'?'':'off';var P=document.getElementById('pane');
+document.getElementById('t1').onclick=function(){tab='inbox';paint()};document.getElementById('t2').onclick=function(){tab='log';paint()};document.getElementById('t3').onclick=function(){tab='bcast';paint()};paint();clearInterval(timer);timer=setInterval(function(){if(tab==='inbox'&&!(document.activeElement&&document.activeElement.tagName==='TEXTAREA'))paint()},15000)}
+function paint(){document.getElementById('t1').className=tab==='inbox'?'':'off';document.getElementById('t2').className=tab==='log'?'':'off';document.getElementById('t3').className=tab==='bcast'?'':'off';var P=document.getElementById('pane');clearTimeout(BC.timer);
+if(tab==='bcast'){bcView(P);return}
 if(tab==='log'){api('log').then(function(r){if(!r.ok)return gone(r);P.innerHTML=r.log.map(function(l){return '<div class="msg"><div class="meta">'+ago(l.at)+' · '+esc(l.who)+'</div><div class="body">'+esc(l.what)+'</div></div>'}).join('')||'<p class="note">Nothing yet.</p>'});return}
 api('inbox').then(function(r){if(!r.ok)return gone(r);P.innerHTML=(r.inbox?'':'<p class="note">Telegram notifications are off: send /inbox to @DionystyBot to get every message on your phone too.</p>')+(r.msgs.map(function(m){return '<div class="msg" data-id="'+m.id+'"><div class="who">'+(m.repliedAt?'':'<span class="new"></span>')+esc(m.who)+'</div><div class="meta">'+esc(m.label)+' · '+ago(m.at)+'</div><div class="body">'+esc(m.body)+'</div>'+(m.repliedAt?'<div class="rep">↳ Starlove: '+esc(m.reply)+'</div>':'')+(m.canReply?'<textarea placeholder="Reply as Starlove"></textarea><button>Send as Starlove</button>':'')+'</div>'}).join('')||'<p class="note">No messages yet. Everything people send Starlove will appear here.</p>');
 [].forEach.call(P.querySelectorAll('.msg button'),function(b){b.onclick=function(){var box=b.parentNode,t=box.querySelector('textarea').value.trim();if(!t)return;b.disabled=true;api('reply',{id:+box.dataset.id,text:t}).then(function(x){b.disabled=false;if(!x.ok){alert(x.error||'Not sent');return}paint()})}})})}
+var BC={timer:0,rooms:[]};
+var BC_TPL={house:{kind:'events',btn:'house',text:'✦ {alias}, places for the First House are open. Friday 18 to Sunday 20 December, one private home in Delhi NCR. Tell us you are coming in the app, and we will keep a place for you.'},news:{kind:'news',btn:'app',text:'✦ {alias}, '}};
+function bcForm(){var v=function(id){var e=document.getElementById(id);return e?e.value:''};return {audience:v('bc-aud'),room:v('bc-room'),kind:v('bc-kind'),text:v('bc-text'),btn:v('bc-btn'),btnText:v('bc-bt'),btnUrl:v('bc-bu')}}
+function bcCount(){var f=bcForm(),el=document.getElementById('bc-n');document.getElementById('bc-roomw').style.display=f.audience==='room'?'':'none';document.getElementById('bc-cust').style.display=f.btn==='url'?'':'none';
+api('broadcast/preview',f).then(function(r){if(!r.ok){el.textContent=r.error==='auth'?'':(r.error||'');return gone(r)}var rs=document.getElementById('bc-room');if(rs&&r.rooms&&rs.options.length!==r.rooms.length){var cur=rs.value;rs.innerHTML=r.rooms.map(function(x){return '<option>'+esc(x)+'</option>'}).join('');if(cur)rs.value=cur}
+el.textContent='Goes to '+r.count+(r.count===1?' person':' people')+' (minus anyone who turned this kind off).';document.getElementById('bc-go').textContent='Send to '+r.count;document.getElementById('bc-go').dataset.n=r.count})}
+function bcView(P){P.innerHTML='<div class="eb">New broadcast</div>'
++'<label>Start from</label><div class="tabs" style="margin:0"><button class="ghost" data-tpl="house" style="width:auto;margin:0;padding:10px 14px">House places open</button><button class="ghost" data-tpl="news" style="width:auto;margin:0;padding:10px 14px">A note from Starlove</button></div>'
++'<label>Who it goes to</label><select id="bc-aud"><option value="members">Members</option><option value="all">Everyone who has said hello</option><option value="applicants">Applicants</option><option value="room">One village</option></select>'
++'<div id="bc-roomw" style="display:none"><label>Village</label><select id="bc-room"></select></div>'
++'<label>Kind</label><select id="bc-kind"><option value="news">News from Starlove</option><option value="events">Houses and events</option></select><p class="note">Each person can switch either kind off with /notifications.</p>'
++'<label>Message</label><textarea id="bc-text" rows="6" placeholder="Write it the way Starlove talks."></textarea><p class="note">{alias} becomes each person’s alias.</p>'
++'<label>Button</label><select id="bc-btn"><option value="app">Open DIONYSTY</option><option value="house">See the House</option><option value="url">A link of my own</option><option value="none">No button</option></select>'
++'<div id="bc-cust" style="display:none"><label>Button text</label><input id="bc-bt" maxlength="40"><label>Link (https://…)</label><input id="bc-bu"></div>'
++'<p class="note" id="bc-n"></p><button class="ghost" id="bc-test">Send a test to the inbox chat</button><button id="bc-go">Send</button><div class="err" id="bc-er"></div>'
++'<div class="eb" style="margin-top:26px">Sent</div><div id="bc-list"><p class="note">Loading…</p></div><p class="note" id="bc-stats"></p>';
+['bc-aud','bc-room','bc-btn'].forEach(function(id){document.getElementById(id).onchange=bcCount});
+[].forEach.call(P.querySelectorAll('[data-tpl]'),function(b){b.onclick=function(){var t=BC_TPL[b.dataset.tpl];document.getElementById('bc-kind').value=t.kind;document.getElementById('bc-btn').value=t.btn;var ta=document.getElementById('bc-text');ta.value=t.text;ta.focus();bcCount()}});
+document.getElementById('bc-test').onclick=function(){var b=this,e=document.getElementById('bc-er');b.disabled=true;e.textContent='';api('broadcast/test',bcForm()).then(function(r){b.disabled=false;e.textContent=r.ok?'Test sent to the inbox chat.':(r.error||'Not sent');gone(r)})};
+document.getElementById('bc-go').onclick=function(){var b=this,e=document.getElementById('bc-er'),f=bcForm(),n=b.dataset.n||'?';e.textContent='';if(!f.text.trim()){e.textContent='Write the message first.';return}
+if(!confirm('Send this to '+n+' people now? It can be stopped while it is going out, but not unsent.'))return;f.confirm=1;b.disabled=true;
+api('broadcast/send',f).then(function(r){b.disabled=false;if(!r.ok){e.textContent=r.error||'Not sent';return gone(r)}document.getElementById('bc-text').value='';e.textContent='On its way to '+r.total+' people.';bcList(true)})};
+bcCount();bcList(true)}
+function bcList(pump){api('broadcast/list',{pump:pump?1:0}).then(function(r){var L=document.getElementById('bc-list');if(!L)return;if(!r.ok){gone(r);return}
+var going=false;L.innerHTML=r.list.map(function(x){if(x.status==='sending')going=true;var aud={all:'Everyone',members:'Members',applicants:'Applicants',room:'Village · '+(x.room||'')}[x.audience]||x.audience;
+return '<div class="msg" data-id="'+x.id+'"><div class="meta">'+ago(x.at)+' · '+esc(aud)+' · '+(x.kind==='events'?'Houses and events':'News')+'</div><div class="body">'+esc(x.body)+'</div><div class="rep">'+(x.status==='sending'?'Sending… ':x.status==='cancelled'?'Stopped · ':'Done · ')+x.sent+' of '+x.total+' delivered'+(x.skipped?' · '+x.skipped+' had it off':'')+(x.failed?' · '+x.failed+' not delivered':'')+'</div>'+(x.status==='sending'?'<button class="ghost" data-stop="'+x.id+'">Stop</button>':'')+'</div>'}).join('')||'<p class="note">Nothing sent yet.</p>';
+[].forEach.call(L.querySelectorAll('[data-stop]'),function(b){b.onclick=function(){if(!confirm('Stop this broadcast? People who already got it keep it.'))return;api('broadcast/cancel',{id:+b.dataset.stop}).then(function(){bcList(false)})}});
+var S=document.getElementById('bc-stats'),names={dm:'message alerts',expiring:'disappearing reminders',events:'event notes',news:'news'};if(S)S.textContent=r.stats&&r.stats.length?'Last 7 days: '+r.stats.map(function(s){return s.sent+' '+(names[s.kind]||s.kind)+(s.failed?' ('+s.failed+' not delivered)':'')}).join(' · '):'';
+clearTimeout(BC.timer);if(going&&tab==='bcast')BC.timer=setTimeout(function(){bcList(true)},4000)})}
 function gone(r){if(r.error==='auth'){T='';sessionStorage.removeItem('sl_t');login()}}
 if(T){api('inbox').then(function(r){if(r.ok)con();else{T='';sessionStorage.removeItem('sl_t');start()}})}else start();
 function start(){api('status').then(function(r){if(r.setup)setup();else login()})}
@@ -4408,9 +4446,9 @@ hApi = async function (req, path, env, body, me, r, room, now) {
       try {
         const pres = await D1.prepare('SELECT seen FROM presence WHERE uid = ?1').bind(t.uid).first();
         const note = await D1.prepare('SELECT at FROM dmnote WHERE to_uid = ?1 AND from_uid = ?2').bind(t.uid, uid).first();
-        if ((!pres || t0 - pres.seen > 120000) && (!note || t0 - note.at > 600000) && !(await hQuiet(env, t.uid))) {
+        if ((!pres || t0 - pres.seen > 120000) && (!note || t0 - note.at > 600000)) {
           await D1.prepare('INSERT OR REPLACE INTO dmnote (to_uid, from_uid, at) VALUES (?1, ?2, ?3)').bind(t.uid, uid, t0).run();
-          await say(env, t.uid, '✦ ' + ((r && r.alias) || 'Someone') + ' wrote to you.', [[{ text: 'Open messages', url: SQ_BASE + '#dm' }]]);
+          await notify(env, t.uid, 'dm', '✦ ' + ((r && r.alias) || 'Someone') + ' wrote to you.', { text: 'Open messages', url: SQ_BASE + '#dm' });
         }
       } catch (e) {}
       return apiJson(req, { ok: true, id: ins.meta.last_row_id });
@@ -4491,12 +4529,222 @@ v2Api = async function (req, path, env, body, user, id, r) {
 };
 
 const dyMainExport = dyMain;
+/* ===== Starlove notifications and broadcasts (added 25 Nov 2026) =====
+   Every message Starlove sends on its own goes through notify(): it checks the person's choices
+   (/notifications in the bot, or "Turn these off" under a message), skips lab bots and people who
+   blocked the bot, and counts what went out per day. Broadcasts from the Starlove console are queued
+   in D1 and sent in small batches (on send, while the console is open, and on every cron run), so a
+   large audience never hits Telegram's or Cloudflare's per-request limits.
+   Settings (optional): BROADCAST_BATCH (default 20 per pass). */
+const NT_KINDS = {
+  dm: { label: 'New private messages', on: true },
+  expiring: { label: 'Messages about to disappear', on: true },
+  events: { label: 'Houses and events', on: true },
+  news: { label: 'News from Starlove', on: true },
+};
+let NT_READY = false;
+async function ntReady(env) {
+  if (NT_READY || !env.D1) return;
+  await env.D1.batch([
+    env.D1.prepare('CREATE TABLE IF NOT EXISTS note_prefs (uid TEXT, kind TEXT, off INTEGER, PRIMARY KEY (uid, kind))'),
+    env.D1.prepare('CREATE TABLE IF NOT EXISTS note_stats (day TEXT, kind TEXT, sent INTEGER DEFAULT 0, failed INTEGER DEFAULT 0, PRIMARY KEY (day, kind))'),
+    env.D1.prepare('CREATE TABLE IF NOT EXISTS bcast (id INTEGER PRIMARY KEY AUTOINCREMENT, at INTEGER, by TEXT, kind TEXT, audience TEXT, room TEXT, body TEXT, btn_text TEXT, btn_url TEXT, total INTEGER DEFAULT 0, sent INTEGER DEFAULT 0, failed INTEGER DEFAULT 0, skipped INTEGER DEFAULT 0, status TEXT, done_at INTEGER)'),
+    env.D1.prepare('CREATE TABLE IF NOT EXISTS bcast_q (bid INTEGER, uid TEXT, status TEXT, PRIMARY KEY (bid, uid))'),
+    env.D1.prepare('CREATE INDEX IF NOT EXISTS bcast_q_open ON bcast_q (bid, status)'),
+  ]);
+  NT_READY = true;
+}
+const ntDay = () => new Date(Date.now() + IST_MS).toISOString().slice(0, 10);
+async function ntCount(env, kind, ok) {
+  try { await env.D1.prepare('INSERT INTO note_stats (day, kind, sent, failed) VALUES (?1, ?2, ?3, ?4) ON CONFLICT (day, kind) DO UPDATE SET sent = sent + ?3, failed = failed + ?4').bind(ntDay(), kind, ok ? 1 : 0, ok ? 0 : 1).run(); } catch (e) {}
+}
+/* is this kind switched off for this person? The app's quiet mode also silences the automatic kinds. */
+async function ntOff(env, uid, kind) {
+  try {
+    await ntReady(env);
+    const p = await env.D1.prepare('SELECT (SELECT off FROM note_prefs WHERE uid = ?1 AND kind = ?2) AS off, (SELECT quiet FROM prefs WHERE uid = ?1) AS quiet').bind(String(uid), kind).first();
+    if (p && p.off) return true;
+    if ((kind === 'dm' || kind === 'expiring') && p && p.quiet) return true;
+  } catch (e) {}
+  return false;
+}
+const ntOffButton = (kind) => ({ text: '🔕 Turn these off', callback_data: 'nt|' + kind + '|off' });
+/* returns 'sent' | 'off' | 'blocked' | 'failed' */
+async function notify(env, uid, kind, text, button, opts) {
+  const o = opts || {};
+  uid = String(uid);
+  if (!uid || uid.indexOf('bot:') === 0) return 'off';
+  if (!o.force && (await ntOff(env, uid, kind))) return 'off';
+  const rows = [];
+  if (button && button.url) rows.push([{ text: button.text || 'Open DIONYSTY', url: button.url }]);
+  if (o.offButton !== false && NT_KINDS[kind]) rows.push([ntOffButton(kind)]);
+  let res = null;
+  try { res = await say(env, uid, text, rows.length ? rows : null); } catch (e) { res = null; }
+  const ok = !!(res && res.ok);
+  await ntCount(env, kind, ok);
+  if (ok) return 'sent';
+  return res && res.error_code === 403 ? 'blocked' : 'failed';
+}
+/* /notifications in the bot: one toggle per kind */
+function ntKeyboard(offs) {
+  return Object.keys(NT_KINDS).map((k) => [{ text: (offs[k] ? '○ ' : '● ') + NT_KINDS[k].label + (offs[k] ? ' · off' : ' · on'), callback_data: 'nt|' + k + '|' + (offs[k] ? 'on' : 'off') }]);
+}
+async function ntOffs(env, uid) {
+  await ntReady(env);
+  const rows = (await env.D1.prepare('SELECT kind, off FROM note_prefs WHERE uid = ?1').bind(String(uid)).all()).results || [];
+  const o = {}; rows.forEach((x) => { o[x.kind] = !!x.off; }); return o;
+}
+async function ntMenu(env, uid) {
+  return say(env, uid, '✦ What Starlove may tell you about. Tap to switch each one on or off. Messages from the team and anything about your membership always reach you.', ntKeyboard(await ntOffs(env, uid)));
+}
+async function ntButton(env, q, ack, setKb) {
+  const [, kind, val] = String(q.data || '').split('|');
+  if (!NT_KINDS[kind]) return ack();
+  await ntReady(env);
+  await env.D1.prepare('INSERT OR REPLACE INTO note_prefs (uid, kind, off) VALUES (?1, ?2, ?3)').bind(String(q.from.id), kind, val === 'off' ? 1 : 0).run();
+  const offs = await ntOffs(env, q.from.id);
+  /* toggling from the /notifications menu redraws the menu; "Turn these off" under a message just answers */
+  if (q.message && q.message.text && q.message.text.indexOf('What Starlove may tell you about') >= 0) await setKb(ntKeyboard(offs));
+  return ack(val === 'off' ? NT_KINDS[kind].label + ': off. /notifications to change.' : NT_KINDS[kind].label + ': on.');
+}
+
+/* ---- disappearing-message reminders ----
+   An unsaved DM disappears 24h after it was sent (messages from before RETENTION_START: 24h after it).
+   About 3 hours before, tell the person who received it, once per conversation per day. */
+async function ntExpiring(env) {
+  if (!env.D1) return;
+  const now = Date.now(), D = 86400000, H = 3600000;
+  const slot = Math.floor(now / H);
+  if (await env.DB.get('nt:exp:' + slot)) return;
+  await env.DB.put('nt:exp:' + slot, '1', { expirationTtl: 2 * 3600 });
+  await ntReady(env);
+  let rows = [];
+  try {
+    rows = (await env.D1.prepare("SELECT d.a, d.b, d.uid, MIN(MAX(d.at, ?1)) AS t FROM dms d WHERE d.body != '' AND d.id NOT IN (SELECT id FROM dm_save) AND MAX(d.at, ?1) > ?2 AND MAX(d.at, ?1) <= ?3 GROUP BY d.a, d.b, d.uid LIMIT 200").bind(RETENTION_START, now - D, now - D + 3 * H).all()).results || [];
+  } catch (e) { return; }
+  const by = new Map();
+  for (const x of rows) {
+    const to = String(x.uid) === String(x.a) ? String(x.b) : String(x.a);
+    if (!by.has(to)) by.set(to, new Set());
+    by.get(to).add(String(x.uid));
+  }
+  let n = 0;
+  for (const [to, froms] of by) {
+    if (n >= 25) break;
+    const fresh = [];
+    for (const f of froms) { const k = 'nt:expd:' + to + ':' + f + ':' + ntDay(); if (!(await env.DB.get(k))) { fresh.push(f); await env.DB.put(k, '1', { expirationTtl: 2 * 86400 }); } }
+    if (!fresh.length) continue;
+    const names = [];
+    for (const f of fresh.slice(0, 3)) { const p = await env.D1.prepare('SELECT alias FROM people WHERE uid = ?1').bind(f).first(); names.push((p && p.alias) || 'someone'); }
+    const who = names.length === 1 ? names[0] : names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1];
+    const more = fresh.length > 3 ? ' and others' : '';
+    await notify(env, to, 'expiring', '✦ Messages from ' + who + more + ' disappear in about 3 hours. Open them to read, or tap ☆ to keep one.', { text: 'Open messages', url: SQ_BASE + '#dm' });
+    n++;
+  }
+}
+
+/* ---- broadcasts ---- */
+const BC_AUDIENCES = { all: 'Everyone', members: 'Members', applicants: 'Applicants', room: 'One village' };
+function bcWhere(audience) {
+  /* never the declined, never lab bots */
+  const base = "uid NOT LIKE 'bot:%' AND (stage IS NULL OR stage != 'Declined')";
+  if (audience === 'members') return base + ' AND member = 1';
+  if (audience === 'applicants') return base + ' AND member = 0 AND done = 1';
+  if (audience === 'room') return base + ' AND member = 1 AND room = ?1';
+  return base;
+}
+function bcCheck(b) {
+  const kind = b.kind === 'events' ? 'events' : 'news';
+  const audience = BC_AUDIENCES[b.audience] ? b.audience : '';
+  const body = String(b.text || '').trim();
+  const room = String(b.room || '').trim().slice(0, 60);
+  let btnText = String(b.btnText || '').trim().slice(0, 40), btnUrl = String(b.btnUrl || '').trim();
+  if (b.btn === 'app') { btnUrl = SQ_APP; btnText = btnText || 'Open DIONYSTY'; }
+  else if (b.btn === 'house') { btnUrl = 'https://dionysty.pages.dev/house/'; btnText = btnText || 'See the House'; }
+  else if (b.btn === 'url') { if (!/^https:\/\/[^\s]+$/.test(btnUrl)) return { error: 'The button link must start with https://' }; btnText = btnText || 'Open'; }
+  else { btnUrl = ''; btnText = ''; }
+  if (!audience) return { error: 'Choose who it goes to.' };
+  if (audience === 'room' && !room) return { error: 'Choose the village.' };
+  if (!body) return { error: 'Write the message first.' };
+  if (body.length > 3500) return { error: 'Keep it under 3,500 characters.' };
+  return { kind, audience, room, body, btnText, btnUrl };
+}
+const bcText = (body, alias) => body.replace(/\{alias\}/g, alias || 'there');
+async function bcPump(env, limit) {
+  await ntReady(env);
+  const n = Math.max(1, Math.min(50, Number(limit) || Number(env.BROADCAST_BATCH) || 20));
+  const bc = await env.D1.prepare("SELECT * FROM bcast WHERE status = 'sending' ORDER BY id LIMIT 1").first();
+  if (!bc) return null;
+  const q = (await env.D1.prepare("SELECT q.uid, p.alias FROM bcast_q q LEFT JOIN people p ON p.uid = q.uid WHERE q.bid = ?1 AND q.status = 'q' LIMIT ?2").bind(bc.id, n).all()).results || [];
+  for (const x of q) {
+    /* claim the row first, so two passes running at once never send twice */
+    const claim = await env.D1.prepare("UPDATE bcast_q SET status = 'busy' WHERE bid = ?1 AND uid = ?2 AND status = 'q'").bind(bc.id, x.uid).run();
+    if (claim && claim.meta && claim.meta.changes === 0) continue;
+    const st = await notify(env, x.uid, bc.kind, bcText(bc.body, x.alias), bc.btn_url ? { text: bc.btn_text, url: bc.btn_url } : null);
+    await env.D1.prepare('UPDATE bcast_q SET status = ?3 WHERE bid = ?1 AND uid = ?2').bind(bc.id, x.uid, st).run();
+  }
+  const c = await env.D1.prepare("SELECT SUM(status = 'sent') AS sent, SUM(status IN ('failed','blocked')) AS failed, SUM(status = 'off') AS skipped, SUM(status IN ('q','busy')) AS left FROM bcast_q WHERE bid = ?1").bind(bc.id).first();
+  const left = (c && c.left) || 0;
+  await env.D1.prepare('UPDATE bcast SET sent = ?2, failed = ?3, skipped = ?4, status = ?5, done_at = ?6 WHERE id = ?1').bind(bc.id, c.sent || 0, c.failed || 0, c.skipped || 0, left ? 'sending' : 'done', left ? null : Date.now()).run();
+  if (!left) await godLog(env, 'Starlove', 'broadcast ' + bc.id + ' finished: ' + (c.sent || 0) + ' sent, ' + (c.failed || 0) + ' not delivered, ' + (c.skipped || 0) + ' had them off');
+  return { id: bc.id, left };
+}
+/* console routes, behind the Starlove sign-in */
+async function bcApi(p, b, env) {
+  await ntReady(env);
+  if (p === 'broadcast/preview') {
+    /* counting doesn't need a message yet */
+    const c = bcCheck(Object.assign({}, b, { text: String(b.text || '').trim() ? b.text : '.' }));
+    if (c.error) return godJson({ ok: false, error: c.error });
+    const st = env.D1.prepare('SELECT COUNT(*) AS n FROM people WHERE ' + bcWhere(c.audience));
+    const r = await (c.audience === 'room' ? st.bind(c.room) : st).first();
+    const rooms = ((await env.D1.prepare("SELECT DISTINCT room FROM people WHERE member = 1 AND room IS NOT NULL AND room != '' ORDER BY room").all()).results || []).map((x) => x.room);
+    return godJson({ ok: true, count: (r && r.n) || 0, rooms });
+  }
+  if (p === 'broadcast/test') {
+    const c = bcCheck(b); if (c.error) return godJson({ ok: false, error: c.error });
+    const inbox = await env.DB.get('sl:inbox');
+    if (!inbox) return godJson({ ok: false, error: 'Set up the Starlove inbox chat first (send /inbox to the bot from it).' });
+    const rows = []; if (c.btnUrl) rows.push([{ text: c.btnText, url: c.btnUrl }]);
+    const r = await say(env, inbox, '✦ Test broadcast (only you see this):\n\n' + bcText(c.body, 'Starlove'), rows.length ? rows : null);
+    return godJson(r && r.ok ? { ok: true } : { ok: false, error: 'Telegram didn’t accept it: ' + ((r && r.description) || 'unknown') });
+  }
+  if (p === 'broadcast/send') {
+    const c = bcCheck(b); if (c.error) return godJson({ ok: false, error: c.error });
+    if (!b.confirm) return godJson({ ok: false, error: 'Confirm first.' });
+    const ins = await env.D1.prepare("INSERT INTO bcast (at, by, kind, audience, room, body, btn_text, btn_url, status) VALUES (?1, 'Starlove', ?2, ?3, ?4, ?5, ?6, ?7, 'sending')").bind(Date.now(), c.kind, c.audience, c.room, c.body, c.btnText, c.btnUrl).run();
+    const bid = ins.meta.last_row_id;
+    const fill = env.D1.prepare("INSERT OR IGNORE INTO bcast_q (bid, uid, status) SELECT ?" + (c.audience === 'room' ? '2' : '1') + ", uid, 'q' FROM people WHERE " + bcWhere(c.audience));
+    await (c.audience === 'room' ? fill.bind(c.room, bid) : fill.bind(bid)).run();
+    const t = await env.D1.prepare('SELECT COUNT(*) AS n FROM bcast_q WHERE bid = ?1').bind(bid).first();
+    await env.D1.prepare('UPDATE bcast SET total = ?2 WHERE id = ?1').bind(bid, (t && t.n) || 0).run();
+    await godLog(env, 'Starlove (Console)', 'broadcast ' + bid + ' to ' + BC_AUDIENCES[c.audience] + (c.room ? ' · ' + c.room : '') + ' (' + ((t && t.n) || 0) + ' people)');
+    const job = bcPump(env).catch(function () {});
+    if (env.__ctx && env.__ctx.waitUntil) env.__ctx.waitUntil(job); else await job;
+    return godJson({ ok: true, id: bid, total: (t && t.n) || 0 });
+  }
+  if (p === 'broadcast/cancel') {
+    await env.D1.prepare("UPDATE bcast SET status = 'cancelled', done_at = ?2 WHERE id = ?1 AND status = 'sending'").bind(Number(b.id) || 0, Date.now()).run();
+    await env.D1.prepare("UPDATE bcast_q SET status = 'cancelled' WHERE bid = ?1 AND status = 'q'").bind(Number(b.id) || 0).run();
+    await godLog(env, 'Starlove (Console)', 'cancelled broadcast ' + (Number(b.id) || 0));
+    return godJson({ ok: true });
+  }
+  if (p === 'broadcast/list') {
+    /* the console polls this while a broadcast is going out; each poll sends one more batch */
+    if (b.pump) { try { await bcPump(env); } catch (e) {} }
+    const rows = (await env.D1.prepare('SELECT id, at, kind, audience, room, body, btn_text, total, sent, failed, skipped, status, done_at FROM bcast ORDER BY id DESC LIMIT 30').all()).results || [];
+    const stats = (await env.D1.prepare('SELECT kind, SUM(sent) AS sent, SUM(failed) AS failed FROM note_stats WHERE day >= ?1 GROUP BY kind').bind(new Date(Date.now() + IST_MS - 6 * 86400000).toISOString().slice(0, 10)).all()).results || [];
+    return godJson({ ok: true, list: rows, stats });
+  }
+  return null;
+}
+
 export default {
   ...dyMainExport,
   async fetch(req, env, ctx) {
     const p = new URL(req.url).pathname;
     if (p === '/starlove' || p === '/starlove/' || p.indexOf('/api/god/') === 0) {
-      try { return await godFetch(req, env); } catch (e) { return godJson({ ok: false, error: 'Something went wrong.' }, 500); }
+      try { return await godFetch(req, { ...env, __ctx: ctx }); } catch (e) { return godJson({ ok: false, error: 'Something went wrong.' }, 500); }
     }
     try { await v2Ready(env); } catch (e) {}
     return dyMain.fetch(req, env, ctx);
