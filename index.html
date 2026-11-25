@@ -895,8 +895,8 @@ function fit(){W=innerWidth;H=vh();if(!W||!H)return;wide=W>=900;dpr=DPRS[di];
  G=geom(W,H);clipP=archPath(G,0,H);pickArch(W,H);var tEl=document.querySelector('.title'),fy;
  DE.classList.toggle('slim-on',!!AR.slim);if(AOK){var AL=archLayout(W,H);clipP=new Path2D();clipP.rect(0,0,W,H);G.m=AL.inL;DE.classList.add('arch-on');DE.style.setProperty('--titleTop',Math.round(AL.titleTop)+'px');DE.style.setProperty('--inL',Math.round(AL.inL)+'px');DE.style.setProperty('--inRm',Math.round(W-AL.inR)+'px');wide=AL.inR-AL.inL>=900;
   var tb=titleEl?(titleEl.style.transform='translateX(-50%)',titleEl.getBoundingClientRect().bottom):0;fy=tb?tb+10:0;fx.setTransform(fd,0,0,fd,0,0);fx.clearRect(0,0,W,H);drawPillars(fx,AL,W,H);
-  if(cx2){ccv.width=fcv.width;ccv.height=fcv.height;CRS=mk(fcv.width,fcv.height);var cs=CRS.getContext('2d');cs.setTransform(fd,0,0,fd,0,0);drawCrown(cs,AL,W,H,fy);CMASK=crownMask(AL,W);CFD=fd;CRH=AL.hc;crownDirty=true}else drawCrown(fx,AL,W,H,fy);
-  CT=cx2?crownTravel(AL):0;DE.style.setProperty('--crownTravel',Math.round(CT)+'px');lastP=-1;slide()}
+  if(cx2){ccv.width=fcv.width;ccv.height=fcv.height;CRS=mk(fcv.width,fcv.height);var cs=CRS.getContext('2d');cs.setTransform(fd,0,0,fd,0,0);drawCrown(cs,AL,W,H,fy);CMASK=crownMask(AL,W);VEIL=AL.slim?0:fy;CFD=fd;CRH=AL.hc;crownDirty=true}else drawCrown(fx,AL,W,H,fy);
+  CT=0; /* the arch stays where it is while you scroll */DE.style.setProperty('--crownTravel',Math.round(CT)+'px');lastP=-1;slide()}
  else{DE.style.setProperty('--apex',G.apex+'px');fy=tEl?tEl.getBoundingClientRect().bottom+10:0;fx.setTransform(fd,0,0,fd,0,0);fx.clearRect(0,0,W,H);drawFrame(fx,G,W,H,fy)}
  c.setTransform(1,0,0,1,0,0);emberG=rad(c,.5*W,.42*H,.8*Math.max(W,H),[0,'rgba('+EMBER+',.07)',.5,'rgba('+EMBER+',.025)',1,'rgba(0,0,0,0)']);
  z0=zHome();DE.style.setProperty('--apex',G.apex+'px');DE.style.setProperty('--m',G.m+'px');
@@ -1039,14 +1039,19 @@ function spring(cur,tgt,v,dt,st){var om=2/st,x=om*dt,ex=1/(1+x+.48*x*x+.235*x*x*
 var vx={v:0},vy={v:0},vz={v:0};
 var dockEl=document.querySelector('.dock'),dockY=0,CRS=null,CMASK=null,CFD=1,CRH=0,CD=0,crownDirty=true;
 /* the crown layer each frame: the live sky in the area around the crown (offset to cancel the slide), then the stone on top */
-var pcN=0,pcD=-1;
+var pcN=0,pcD=-1,VEIL=0,VB=null,VFADE=70;
 function paintCrown(){if(!cx2||!CRS||!CMASK)return;var vis=CRH-CD;pcN++;if(vis<=0){if(pcD!==CD){cx2.setTransform(1,0,0,1,0,0);cx2.clearRect(0,0,ccv.width,Math.ceil(CRH*CFD)+2);pcD=CD}return}
- if(CD===pcD&&pcN%2&&!RM)return;pcD=CD;var hp=Math.ceil(CRH*CFD)+2;
+ if(CD===pcD&&RM)return; /* repaint every frame so the stars in the corners move with the rest of the sky */pcD=CD;var hp=Math.ceil(CRH*CFD)+2;
  cx2.setTransform(1,0,0,1,0,0);cx2.clearRect(0,0,ccv.width,hp);cx2.setTransform(CFD,0,0,CFD,0,0);
  cx2.save();cx2.clip(CMASK,'evenodd');cx2.drawImage(cv,0,0,cv.width,Math.max(1,Math.round(vis*dpr)),0,CD,W,vis);cx2.restore();
+ /* the top of the opening is the live sky too, so text scrolling up fades out under the arch instead of passing behind it */
+ if(VEIL>0){var bh=Math.min(CRH,VEIL+VFADE);if(!VB)VB=document.createElement('canvas');var bw=Math.round(W*CFD),bp=Math.round(bh*CFD);if(VB.width!==bw||VB.height!==bp){VB.width=bw;VB.height=bp}
+  var vb=VB.getContext('2d');vb.globalCompositeOperation='copy';vb.drawImage(cv,0,0,cv.width,Math.max(1,Math.round(bh*dpr)),0,0,bw,bp);vb.globalCompositeOperation='destination-in';
+  var gr=vb.createLinearGradient(0,0,0,bp);gr.addColorStop(0,'#000');gr.addColorStop(Math.max(0,(bh-VFADE)/bh),'#000');gr.addColorStop(1,'rgba(0,0,0,0)');vb.fillStyle=gr;vb.fillRect(0,0,bw,bp);vb.globalCompositeOperation='source-over';
+  cx2.setTransform(1,0,0,1,0,0);cx2.drawImage(VB,0,0);cx2.setTransform(CFD,0,0,CFD,0,0)}
  cx2.setTransform(1,0,0,1,0,0);cx2.drawImage(CRS,0,0,CRS.width,hp,0,0,CRS.width,hp)}
 function slide(){if(!ccv||!AOK)return;var y=window.scrollY||0,p=RM?(y>innerHeight*.3?1:0):ease(y/(innerHeight*.38));if(Math.abs(p-lastP)<.002)return;lastP=p;var D=p*CT;CD=D;
- ccv.style.transform='translate3d(0,'+(-D).toFixed(1)+'px,0)';if(titleEl)titleEl.style.transform='translate(-50%,'+(-D).toFixed(1)+'px) scale('+(1-.12*p).toFixed(3)+')';DE.style.setProperty('--crownP',p.toFixed(3))}
+ ccv.style.transform='translate3d(0,'+(-D).toFixed(1)+'px,0)';if(titleEl)titleEl.style.transform='translate(-50%,0)';DE.style.setProperty('--crownP',p.toFixed(3))}
 function update(n,dt){var y=window.scrollY||0;slide();if(y!==lastSY){if(dockEl){if(y>dockY+40&&y>innerHeight*.5){dockEl.classList.add('tuck');dockY=y}else if(y<dockY-20||y<innerHeight*.5){dockEl.classList.remove('tuck');dockY=y}}if(Math.abs(y-lastSY)>2&&lastSY>=0)relax=true;lastSY=y;section();if(y>40&&hint)hint.classList.add('gone')}
  var px=cam.x,py=cam.y;
  if(warp){var l=Math.min(1,(n-warp.t)/warp.dur),e=l<.5?4*l*l*l:1-Math.pow(-2*l+2,3)/2;cam.x=warp.fx+(SUN.x-warp.fx)*e;cam.y=warp.fy+(SUN.y-warp.fy)*e;cam.z=warp.fz+(2.6-warp.fz)*e;sv.x=sv.y=0;return}
