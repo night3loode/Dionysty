@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Dionysty — The best people you've never met.</title>
+  <style>
+    :root { --ink:#211c25; --night:#1b1822; --night2:#29232d; --paper:#f4eee5; --cream:#faf5ed; --peach:#e7aa88; --rose:#c89796; --faded:#6e626b; --line:#d9cdc4; --warm:#e8d4bc; }
+    * { box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body { margin:0; background:var(--paper); color:var(--ink); font-family:'Liberation Sans',Arial,sans-serif; -webkit-font-smoothing:antialiased; }
+    a { color:inherit; text-decoration:none; }
+    h1,h2,h3,p { margin-top:0; }
+    .serif { font-family:'C059','Liberation Serif',Georgia,serif; font-weight:400; }
+    .page { overflow:hidden; }
+    .inner { width:min(1190px,calc(100% - 124px)); margin:0 auto; }
+    .eyebrow { text-transform:uppercase; font-size:10px; letter-spacing:2.7px; font-weight:700; line-height:1.6; }
+    .eyebrow .star { color:#d78d6e; margin-right:11px; }
+    .soft { color:var(--faded); }
+    .section-title { font-family:'C059','Liberation Serif',Georgia,serif; font-size:clamp(52px,5.2vw,78px); line-height:1.04; font-weight:400; letter-spacing:-2px; }
+    .section-text { font-size:19px; line-height:1.75; letter-spacing:-.08px; }
+    .button { display:inline-flex; align-items:center; justify-content:center; gap:15px; padding:20px 23px; font-size:11px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; min-width:240px; transition:background .2s; }
+    .button.light { background:#f2e5d6; color:#231a22; }
+    .button.dark { background:var(--night); color:#f2e5d6; }
+    .button .arrow { font-family:Georgia,serif; font-size:22px; font-weight:400; line-height:12px; }
+    .text-link { display:inline-block; border-bottom:1px solid currentColor; padding-bottom:5px; letter-spacing:.4px; font-size:13px; }
+    .nav { height:91px; background:var(--night); color:#f2e5d6; display:flex; align-items:center; position:relative; z-index:4; border-bottom:1px solid #53454b; }
+    .nav .inner { display:flex; align-items:center; justify-content:space-between; gap:24px; }
+    .brand { font-family:'C059',Georgia,serif; letter-spacing:5.5px; font-size:22px; }
+    .brand::before { content:'✳'; font-family:serif; font-size:18px; color:var(--peach); margin-right:11px; }
+    .navlinks { display:flex; align-items:center; gap:35px; font-size:10px; letter-spacing:1.8px; text-transform:uppercase; }
+    .navlinks a:last-child { border:1px solid #9a8380; padding:12px 16px; }
+    .hero { position:relative; background:var(--night); color:#f9f0e4; min-height:746px; }
+    .hero .inner { position:relative; z-index:2; padding-top:124px; padding-bottom:120px; }
+    .hero-copy { width:670px; max-width:60%; }
+    .hero .eyebrow { color:#d9bbaa; }
+    h1 { font-family:'C059','Liberation Serif',Georgia,serif; font-size:clamp(74px,7.8vw,112px); line-height:.98; font-weight:400; letter-spacing:-3.9px; margin:35px 0 35px; }
+    h1 em { color:var(--peach); font-weight:400; }
+    .hero .lead { font-family:'C059','Liberation Serif',Georgia,serif; font-size:23px; line-height:1.52; letter-spacing:.1px; width:550px; max-width:100%; margin-bottom:13px; }
+    .hero .sublead { color:#c6bab9; font-size:16px; line-height:1.75; width:475px; max-width:100%; margin-bottom:32px; }
+    .hero-actions { display:flex; align-items:center; gap:28px; }
+    .hero-caption { font-size:11px; color:#baa9ac; letter-spacing:.4px; }
+    .hero-art { position:absolute; top:0; right:0; bottom:0; width:54%; z-index:1; opacity:.98; pointer-events:none; }
+    .hero-art::after { content:''; position:absolute; inset:0; background:linear-gradient(90deg,var(--night) 0%,rgba(27,24,34,.93) 4%,rgba(27,24,34,.08) 40%,transparent 80%),linear-gradient(0deg,var(--night),transparent 24%); }
+    .hero-art svg { width:100%; height:100%; object-fit:cover; }
+    .scroll-prompt { position:absolute; bottom:37px; z-index:3; left:max(62px,calc((100% - 1190px)/2)); color:#9f8d90; letter-spacing:2px; font-size:10px; text-transform:uppercase; }
+    .scroll-prompt .line { display:inline-block; height:23px; border-left:1px solid var(--peach); margin-right:17px; vertical-align:middle; }
+    .ticker { background:#d2a79a; color:#262027; border-bottom:1px solid #b89489; border-top:1px solid #d9b6a8; padding:20px; text-align:center; font-size:10px; letter-spacing:4px; text-transform:uppercase; }
+    .ticker b { font-size:17px; font-weight:400; padding:0 35px; vertical-align:middle; }
+    .club { padding:142px 0 150px; background:var(--paper); }
+    .club-layout { display:grid; grid-template-columns:1fr 1fr; column-gap:95px; }
+    .club h2 { margin:26px 0 0; }
+    .club-right { padding-top:58px; }
+    .club-right p + p { margin-top:18px; }
+    .club-points { display:grid; grid-template-columns:repeat(3,1fr); margin-top:92px; border-top:1px solid #cdbcb5; border-bottom:1px solid #cdbcb5; }
+    .club-point { padding:33px 26px 31px 0; min-height:164px; }
+    .club-point + .club-point { border-left:1px solid #cdbcb5; padding-left:28px; }
+    .club-point strong { display:block; font-family:'C059',Georgia,serif; font-size:37px; font-weight:400; margin-bottom:13px; line-height:1; }
+    .club-point span { font-size:14px; line-height:1.6; color:#6f5f65; }
+    .quote-band { background:#e6d7c7; padding:81px 20px; text-align:center; }
+    .quote-band .serif { font-size:50px; line-height:1.1; letter-spacing:-.8px; }
+    .quote-band p { font-size:12px; letter-spacing:1.5px; text-transform:uppercase; margin:21px 0 0; }
+    .temples { background:#e9dfd7; padding:132px 0 145px; }
+    .temple-header { display:grid; grid-template-columns:1fr 1fr; column-gap:100px; padding-bottom:70px; }
+    .temple-header h2 { margin:22px 0 0; }
+    .temple-header .intro { padding-top:60px; }
+    .temple-header .intro p { font-size:18px; line-height:1.72; }
+    .temple-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+    .temple { background:#f6f0e9; min-height:268px; padding:25px 23px 27px; display:flex; flex-direction:column; justify-content:space-between; border:1px solid #d9cfc7; }
+    .temple:nth-child(2),.temple:nth-child(7) { background:#e2cdc5; }
+    .temple:nth-child(4) { background:#2a2530; color:#f0dfd4; border-color:#2a2530; }
+    .temple .num { font-size:10px; letter-spacing:1.8px; text-transform:uppercase; color:#9d837e; }
+    .temple h3 { font-family:'C059',Georgia,serif; font-size:33px; font-weight:400; margin:0 0 11px; letter-spacing:-.4px; }
+    .temple p { font-size:13.5px; line-height:1.5; margin:0; }
+    .temple .glyph { font-family:'C059',Georgia,serif; font-size:39px; align-self:flex-end; color:#af8d83; line-height:1; }
+    .temple-footer { display:flex; justify-content:space-between; align-items:center; margin-top:27px; font-size:12px; color:#77646c; }
+    .house { background:#2a2229; color:#f8f0e5; padding:132px 0 143px; position:relative; }
+    .house::before { content:''; position:absolute; width:520px; height:520px; border:1px solid rgba(214,171,154,.33); border-radius:50%; right:-150px; top:-200px; box-shadow:0 0 0 70px rgba(214,171,154,.025),0 0 0 140px rgba(214,171,154,.025); }
+    .house-grid { display:grid; grid-template-columns:1.15fr .85fr; gap:100px; position:relative; }
+    .house h2 { margin:24px 0 31px; }
+    .house p { color:#e7d8d1; font-size:18px; line-height:1.75; }
+    .house .button { margin-top:24px; }
+    .date-panel { border:1px solid #80675f; padding:38px; display:flex; flex-direction:column; justify-content:space-between; min-height:455px; background:linear-gradient(130deg,#3b3037,#221c25); }
+    .date-panel .tiny { text-transform:uppercase; font-size:10px; letter-spacing:2.8px; color:#e3bba8; }
+    .date-panel .big { font-family:'C059',Georgia,serif; font-size:126px; line-height:.88; letter-spacing:-6px; font-weight:400; }
+    .date-panel .big span { font-size:62px; vertical-align:top; margin:0 13px; }
+    .date-panel .bottom { border-top:1px solid #80675f; padding-top:23px; display:flex; justify-content:space-between; font-size:11px; letter-spacing:1.8px; text-transform:uppercase; }
+    .membership { background:#faf6ef; padding:145px 0 145px; }
+    .membership-header { display:flex; justify-content:space-between; gap:90px; margin-bottom:80px; }
+    .membership-header h2 { margin:25px 0 0; max-width:700px; }
+    .membership-header p { width:340px; padding-top:95px; color:#6e626b; font-size:17px; line-height:1.7; }
+    .steps { display:grid; grid-template-columns:repeat(5,1fr); gap:0; border-top:1px solid #cbbcb3; border-bottom:1px solid #cbbcb3; }
+    .step { padding:28px 23px 32px; border-right:1px solid #cbbcb3; min-height:335px; }
+    .step:first-child { padding-left:0; }
+    .step:last-child { border-right:0; }
+    .step .digit { display:block; font-family:'C059',Georgia,serif; font-size:51px; color:#bc8d7e; margin-bottom:28px; }
+    .step h3 { font-family:'C059',Georgia,serif; font-weight:400; font-size:28px; line-height:1.15; margin-bottom:17px; }
+    .step p { font-size:13.5px; line-height:1.65; color:#6f6469; }
+    .membership-bottom { display:grid; grid-template-columns:1fr 1fr; gap:50px; align-items:start; margin-top:54px; }
+    .gate { border-left:3px solid #b68173; background:#f0e5d9; padding:26px 28px 20px; }
+    .gate strong { font-size:11px; text-transform:uppercase; letter-spacing:2px; }
+    .gate p { margin:12px 0 0; font-size:15px; line-height:1.7; }
+    .sigil { padding:94px 0; background:#e9d9cb; }
+    .sigil-layout { display:grid; grid-template-columns:1fr 1fr; gap:90px; align-items:center; }
+    .sigil h2 { font-size:66px; margin:24px 0 27px; }
+    .sigil p { font-size:18px; line-height:1.7; }
+    .sigil-art { text-align:center; }
+    .sigil-art svg { width:400px; max-width:100%; height:auto; }
+    .sigil-art small { display:block; letter-spacing:2.5px; text-transform:uppercase; font-size:10px; margin-top:2px; color:#8e7471; }
+    .charter { background:#211d25; padding:140px 0 148px; color:#f7eee3; }
+    .charter-header { display:grid; grid-template-columns:1fr 1fr; gap:100px; margin-bottom:72px; }
+    .charter-header h2 { margin:25px 0 0; }
+    .charter-header p { margin-top:60px; font-size:19px; line-height:1.7; color:#d6c4c0; }
+    .principles { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+    .principle { border:1px solid #5b4c50; padding:28px 24px 26px; min-height:229px; }
+    .principle .roman { display:block; font-size:10px; letter-spacing:2px; color:#c89e8c; margin-bottom:45px; }
+    .principle h3 { font-family:'C059',Georgia,serif; font-size:29px; font-weight:400; margin:0 0 12px; }
+    .principle p { font-size:13px; line-height:1.6; color:#c4b2af; margin:0; }
+    .charter-rule { display:grid; grid-template-columns:1fr 1fr; gap:90px; border-top:1px solid #5e5154; margin-top:42px; padding-top:43px; }
+    .charter-rule strong { font-family:'C059',Georgia,serif; font-size:29px; font-weight:400; }
+    .charter-rule p { font-size:14px; line-height:1.7; color:#c9b7b1; margin:12px 0 0; }
+    .safeguards { padding:140px 0 120px; background:#f2e9de; }
+    .faq-layout { display:grid; grid-template-columns:.75fr 1.25fr; gap:90px; }
+    .faq-layout h2 { margin:25px 0; font-size:64px; }
+    .faq-layout .sidebar { font-size:17px; color:#6d6065; line-height:1.75; }
+    .accordion { border-top:1px solid #cbbbaf; }
+    details { border-bottom:1px solid #cbbbaf; }
+    summary { padding:22px 0; list-style:none; cursor:pointer; display:flex; justify-content:space-between; align-items:center; gap:25px; font-family:'C059',Georgia,serif; font-size:23px; line-height:1.2; }
+    summary::-webkit-details-marker { display:none; }
+    summary .plus { font-family:'Liberation Sans',sans-serif; font-size:22px; font-weight:300; color:#a07970; }
+    details[open] summary .plus { transform:rotate(45deg); }
+    .answer { margin:0 32px 26px 0; color:#6a5e65; font-size:15px; line-height:1.75; }
+    .questions { padding:128px 0 135px; background:#fbf7ef; }
+    .questions .faq-layout { grid-template-columns:.75fr 1.25fr; }
+    .closing { background:#2a222a; color:#f9f0e6; padding:125px 0 115px; text-align:center; }
+    .closing h2 { font-family:'C059',Georgia,serif; font-weight:400; font-size:76px; letter-spacing:-1.6px; max-width:830px; margin:26px auto; line-height:1.03; }
+    .closing p { color:#d1bdb7; font-size:18px; line-height:1.7; max-width:600px; margin:0 auto 34px; }
+    .closing .button { min-width:280px; }
+    footer { background:#1a171f; color:#d0bcb2; padding:58px 0 36px; }
+    footer .footer-top { display:flex; justify-content:space-between; gap:20px; align-items:center; margin-bottom:53px; }
+    footer .footer-brand { color:#f4e9db; font-family:'C059',Georgia,serif; font-size:28px; letter-spacing:5px; }
+    footer .footer-links { display:flex; gap:27px; text-transform:uppercase; letter-spacing:1.5px; font-size:10px; }
+    footer .last { display:flex; justify-content:space-between; padding-top:26px; border-top:1px solid #4c3d44; gap:40px; color:#a68e8e; font-size:11px; line-height:1.6; letter-spacing:.3px; }
+    @media (max-width:900px) {
+      .inner { width:calc(100% - 48px); }
+      .navlinks a:not(:last-child) { display:none; }
+      .hero .inner { padding-top:100px; padding-bottom:110px; }
+      .hero-copy { max-width:100%; width:100%; }
+      h1 { font-size:75px; max-width:530px; }
+      .hero-art { width:100%; opacity:.33; }
+      .hero-art::after { background:linear-gradient(90deg,var(--night),transparent 100%); }
+      .club-layout,.temple-header,.house-grid,.sigil-layout,.charter-header,.charter-rule,.faq-layout,.questions .faq-layout { grid-template-columns:1fr; gap:25px; }
+      .club-right,.temple-header .intro,.charter-header p { padding-top:0; margin-top:0; }
+      .temple-grid,.principles { grid-template-columns:repeat(2,1fr); }
+      .steps { grid-template-columns:repeat(2,1fr); }
+      .membership-header { display:block; }
+      .membership-header p { width:100%; padding-top:20px; }
+      .membership-bottom { grid-template-columns:1fr; }
+      .club-points { grid-template-columns:1fr; }
+      .club-point + .club-point { border-left:0; border-top:1px solid #cdbcb5; padding-left:0; }
+      .closing h2 { font-size:55px; }
+    }
+    /* The following controls belong only to this founder prototype. */
+    .founder-ribbon { background:#e2c0ae; color:#2d2029; min-height:49px; display:flex; gap:18px; justify-content:space-between; align-items:center; padding:9px max(24px,calc((100% - 1190px)/2)); font-size:12px; position:relative; z-index:20; }
+    .founder-ribbon strong { letter-spacing:1.5px; font-size:11px; }
+    .founder-ribbon nav { display:flex; gap:20px; align-items:center; }
+    .founder-ribbon a { padding-bottom:2px; border-bottom:1px solid transparent; }
+    .founder-ribbon a:hover,.founder-ribbon .active { border-color:currentColor; }
+    .temple { transition:transform .2s ease,box-shadow .2s ease,outline-color .2s ease; }
+    .temple.selected { outline:2px solid #9a5c6b; outline-offset:-3px; box-shadow:0 10px 25px rgba(68,43,52,.12); }
+    .temple-controls { display:flex; align-items:center; gap:10px; margin-top:18px; }
+    .temple-controls button { width:28px;height:28px;border:1px solid #b7a39b;background:transparent;color:inherit;cursor:pointer;font-size:20px;line-height:24px; }
+    .temple-controls button:hover { background:#d8b3a7;color:#221b24; }
+    .temple-controls button:disabled { opacity:.24;cursor:default; }
+    .temple-controls span { font-family:'C059',Georgia,serif;font-size:22px;min-width:21px;text-align:center; }
+    .temple-points-note { display:block;margin-top:12px;color:#78686d;font-size:14px; }
+    .sigil-art svg { overflow:visible; }
+    #sigilProgress { color:#806b73;font-size:14px;margin-top:20px; }
+    .preview-dialog { border:0;padding:0;max-width:min(490px,calc(100vw - 32px));width:100%;background:#f6eee5;color:#241b24;box-shadow:0 18px 70px #0005; }
+    .preview-dialog::backdrop { background:rgba(20,15,22,.7); }
+    .preview-dialog article { padding:42px; }
+    .preview-dialog h2 { font:normal 42px/1.05 'C059',Georgia,serif;margin:12px 0 17px; }
+    .preview-dialog p { line-height:1.6; }
+    .preview-dialog .buttons { display:flex;justify-content:space-between;gap:15px;align-items:center;margin-top:28px; }
+    .preview-dialog button { cursor:pointer;background:transparent;border:0;text-decoration:underline;color:#715560; }
+    .preview-dialog .button { min-width:0;gap:20px; }
+    @media (max-width:900px) {
+      .founder-ribbon { flex-direction:column;align-items:flex-start;gap:6px; }
+      .founder-ribbon nav { flex-wrap:wrap;gap:13px; }
+      .temple-controls button { width:35px;height:35px; }
+    }
+  </style>
+</head>
+<body>
+<div class="founder-ribbon"><strong>DIONYSTY · FOUNDER PREVIEW</strong><nav aria-label="Founder preview navigation"><a href="brand.html">Brand foundations</a><a class="active" href="index.html">Interactive homepage</a><a href="assets/Dionysty_Brand_Foundations_2026.pdf" download>Download brand document</a></nav></div>
+<div class="page">
+  <nav class="nav"><div class="inner">
+    <a class="brand" href="#top">DIONYSTY</a>
+    <div class="navlinks"><a href="#club">The village</a><a href="#temples">Your people</a><a href="#house">First House</a><a href="#membership">Membership</a><a href="https://dionysty.pages.dev/app/#meet">Come say hello</a></div>
+  </div></nav>
+
+  <section id="top" class="hero">
+    <div class="hero-art" aria-hidden="true">
+      <svg viewBox="0 0 830 790" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+        <defs><radialGradient id="glow"><stop stop-color="#b7785b" stop-opacity=".55"/><stop offset="1" stop-color="#b7785b" stop-opacity="0"/></radialGradient><linearGradient id="walls" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#50333f"/><stop offset="1" stop-color="#191923"/></linearGradient><linearGradient id="arch" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#936456"/><stop offset=".6" stop-color="#3c303b"/><stop offset="1" stop-color="#302733"/></linearGradient><linearGradient id="table" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#aa7764"/><stop offset="1" stop-color="#5d3a40"/></linearGradient><filter id="blur"><feGaussianBlur stdDeviation="22"/></filter></defs>
+        <rect width="830" height="790" fill="url(#walls)"/><ellipse cx="470" cy="310" rx="330" ry="390" fill="url(#glow)"/>
+        <path d="M235 635V220Q235 -5 492 -5Q755 -5 755 220V635Z" fill="#2a222f" stroke="#74525a" stroke-width="14"/>
+        <path d="M259 635V230Q259 22 495 22Q728 22 728 230V635Z" fill="url(#arch)"/>
+        <path d="M276 635V240Q276 43 492 43Q710 43 710 240V635Z" fill="#3b2b35"/>
+        <path d="M290 630V239Q290 63 492 63Q697 63 697 239V630Z" fill="#2b2631"/>
+        <path d="M278 620h430" stroke="#69434e" stroke-width="4"/>
+        <path d="M312 618V261Q312 96 495 96Q674 96 674 261V618" stroke="#9f776d" stroke-opacity=".4" fill="none" stroke-width="3"/>
+        <g opacity=".56"><rect x="327" y="104" width="6" height="500" fill="#7c5360"/><rect x="655" y="104" width="6" height="500" fill="#7c5360"/></g>
+        <circle cx="493" cy="313" r="182" fill="url(#glow)"/>
+        <path d="M489 0V156" stroke="#b58b6f" stroke-width="3"/><ellipse cx="489" cy="195" rx="64" ry="24" fill="#b68a65" opacity=".75"/><path d="M423 191Q489 248 554 191" stroke="#d8ad82" stroke-width="5" fill="none"/><ellipse cx="489" cy="226" rx="50" ry="10" fill="#ad745f" opacity=".4"/>
+        <g fill="#f3c58c"><path d="M447 185v-30m42 32v-42m42 42v-30" stroke="#f3c58c" stroke-width="4"/><circle cx="447" cy="152" r="5"/><circle cx="489" cy="141" r="5"/><circle cx="531" cy="152" r="5"/></g>
+        <g opacity=".7"><path d="M320 494Q335 438 376 465Q406 484 399 553V676H301V559Z" fill="#774551" stroke="#ba8179" stroke-width="4"/><path d="M612 493Q627 433 673 460Q704 479 696 555V667H605V552Z" fill="#774551" stroke="#ba8179" stroke-width="4"/></g>
+        <g><ellipse cx="495" cy="575" rx="275" ry="80" fill="#160f1b" opacity=".55" filter="url(#blur)"/><path d="M237 534Q495 488 754 534V596Q495 651 237 596Z" fill="#5e3d43"/><ellipse cx="495" cy="538" rx="260" ry="72" fill="url(#table)"/><ellipse cx="495" cy="530" rx="235" ry="54" fill="#c09375" opacity=".22"/><path d="M280 553Q496 650 709 556" stroke="#daaa88" stroke-opacity=".35" stroke-width="3" fill="none"/>
+        <g fill="none" stroke="#e8c8b0" stroke-opacity=".8" stroke-width="3"><ellipse cx="375" cy="540" rx="41" ry="17"/><ellipse cx="591" cy="546" rx="45" ry="19"/><ellipse cx="497" cy="505" rx="37" ry="14"/></g>
+        <g stroke="#e5c3a1" stroke-width="3" fill="none"><path d="M340 530l-8 -48h28l-8 48m-12 0h12m-6 0v16m-17 0h33"/><path d="M632 538l-8 -51h28l-8 51m-12 0h12m-6 0v16m-17 0h33"/><path d="M440 513l-6 -40h22l-6 40m-6 0h7m-3 0v13m-13 0h28"/></g>
+        <path d="M505 484v-72" stroke="#d5bc8f" stroke-width="5"/><path d="M494 418h21" stroke="#dab27d" stroke-width="4"/><path d="M500 410l4 -15 5 15" fill="#f1c67a"/><circle cx="505" cy="407" r="30" fill="url(#glow)"/>
+        <g fill="#7c5e57"><ellipse cx="558" cy="508" rx="17" ry="10"/><ellipse cx="571" cy="496" rx="9" ry="13"/><ellipse cx="547" cy="496" rx="9" ry="13"/></g></g>
+        <path d="M0 690Q397 610 830 678V790H0Z" fill="#211b26"/><path d="M0 703Q397 643 830 704" fill="none" stroke="#7e5360" stroke-width="2" opacity=".4"/>
+        <g opacity=".7"><circle cx="747" cy="91" r="3" fill="#b99075"/><circle cx="708" cy="118" r="2" fill="#b99075"/><circle cx="728" cy="149" r="2" fill="#b99075"/></g>
+      </svg>
+    </div>
+    <div class="inner"><div class="hero-copy">
+      <div class="eyebrow"><span class="star">✳</span>A private, invitation-only club · Delhi NCR</div>
+      <h1>The best people <em>you've never met.</em></h1>
+      <p class="lead">There are people you'd love to know and things you'd love to try that your usual life might never bring your way.</p>
+      <p class="sublead">We thought it would be fun to change that, one small gathering at a time.</p>
+      <div class="hero-actions"><a class="button light" href="https://dionysty.pages.dev/app/#meet">Come say hello</a><span class="hero-caption">A private conversation with Starlove.</span></div>
+    </div></div>
+    <div class="scroll-prompt"><span class="line"></span>A little more about us</div>
+  </section>
+
+  <div class="ticker">GOOD PEOPLE <b>✳</b> SMALL GATHERINGS <b>✳</b> NEW EXPERIENCES <b>✳</b> DISCRETION, ALWAYS</div>
+
+  <section id="club" class="club"><div class="inner">
+    <div class="club-layout"><div><div class="eyebrow"><span class="star">✳</span>01 · The village</div><h2 class="section-title">Your circle could use a few more circles.</h2></div>
+      <div class="club-right"><p class="section-text">You know the people you know. And they're wonderful. But there are whole worlds of interesting people your life simply hasn't put in front of you yet.</p><p class="section-text">That's why we're building Dionysty. A private village of up to fifty people who get together in beautiful homes, over food, music, ideas, games and whatever else sounds like a good time.</p><p class="section-text">The lovely part? You see people again. That's when strangers start becoming your people.</p></div></div>
+    <div class="club-points"><div class="club-point"><strong>50, at most.</strong><span>A village small enough for people to actually get to know one another.</span></div><div class="club-point"><strong>Thoughtfully hosted.</strong><span>Small circles, good introductions, and room to be yourself.</span></div><div class="club-point"><strong>More than once.</strong><span>Not a crowd that disappears when the evening ends.</span></div></div>
+  </div></section>
+  <section class="quote-band"><div class="serif">The interesting part of life is often <em>other people.</em></div><p>We'd quite like to meet more of them.</p></section>
+
+  <section id="temples" class="temples"><div class="inner">
+    <div class="temple-header"><div><div class="eyebrow"><span class="star">✳</span>02 · Your kind of people</div><h2 class="section-title">What are you curious about?</h2></div><div class="intro"><p>Some of us come for the conversations. Some for the art, the dancing, the adventure. Some hope to find love. Most of us are a bit of everything.</p><p>We call these interests our seven Temples. Pick what draws you in. It helps us introduce you to the right people, and you can change your mind whenever you like.</p></div></div>
+    <div class="temple-grid">
+      <div class="temple"><span class="num">I · The artists</span><span class="glyph">✺</span><div><h3>The Artists</h3><p>People who make things, and people who love being around them.</p></div></div>
+      <div class="temple"><span class="num">II · The thinkers</span><span class="glyph">◌</span><div><h3>The Thinkers</h3><p>Questions that deserve another cup of coffee.</p></div></div>
+      <div class="temple"><span class="num">III · The healers</span><span class="glyph">✤</span><div><h3>The Healers</h3><p>People who notice when someone needs a little kindness.</p></div></div>
+      <div class="temple"><span class="num">IV · The lovers</span><span class="glyph">♡</span><div><h3>The Lovers</h3><p>Honest connection, in whatever form it finds you.</p></div></div>
+      <div class="temple"><span class="num">V · The wanderers</span><span class="glyph">✧</span><div><h3>The Wanderers</h3><p>For the "should we just go?" people.</p></div></div>
+      <div class="temple"><span class="num">VI · The revellers</span><span class="glyph">☼</span><div><h3>The Revellers</h3><p>Music, dancing, and stories that begin after dinner.</p></div></div>
+      <div class="temple"><span class="num">VII · The builders</span><span class="glyph">△</span><div><h3>The Builders</h3><p>The people who like to make ideas real.</p></div></div>
+      <div class="temple" style="background:transparent;border:1px dashed #ad9b92;justify-content:center"><span class="glyph" style="align-self:flex-start;font-size:40px;line-height:1">✳</span><div><h3 style="font-size:27px">A little of everything?</h3><p>That's quite alright. These aren't boxes. They're conversation starters.</p></div></div>
+    </div>
+    <div class="temple-footer"><div>Try making a Sigil: distribute ten points across the seven Temples.<strong class="temple-points-note" id="pointsCount" aria-live="polite">0 of 10 points chosen</strong></div><a class="text-link" href="https://dionysty.pages.dev/app/#meet">Meet Starlove</a></div>
+  </div></section>
+
+  <section id="house" class="house"><div class="inner"><div class="house-grid">
+    <div><div class="eyebrow" style="color:#dfad98">✳ &nbsp;03 · Our first gathering</div><h2 class="section-title">Let's start with a weekend.</h2><p>Two nights. One beautiful home. No more than fifty people.</p><p>Come on Friday evening, settle into good food, live music, small circles and conversations you don't have to rush. Stay until Sunday brunch. Head home with people you're already looking forward to seeing again.</p><p>The address goes only to confirmed guests, close to the date.</p><a class="button light" href="https://dionysty.pages.dev/house/">See the weekend</a></div>
+    <div class="date-panel"><div class="tiny">The First House · Delhi NCR</div><div class="big">04<span>—</span>06</div><div class="bottom"><span>December 2026</span><span>Friday to Sunday</span></div></div>
+  </div></div></section>
+
+  <section id="membership" class="membership"><div class="inner">
+    <div class="membership-header"><div><div class="eyebrow"><span class="star">✳</span>04 · Membership</div><h2 class="section-title">So, how does someone get in?</h2></div><p>We start with a conversation. We take the rest seriously because everyone in the room deserves to feel they belong there.</p></div>
+    <div class="steps">
+      <div class="step"><span class="digit">01</span><h3>Say hello to Starlove.</h3><p>Start a private Telegram chat. Choose an alias, what you'd like to explore, how you'd come, and add a member code if someone invited you. No long form.</p></div>
+      <div class="step"><span class="digit">02</span><h3>Let's have a call.</h3><p>Ten minutes over video. Tell us about yourself. Ask anything about the people, the privacy, the rules or the cost.</p></div>
+      <div class="step"><span class="digit">03</span><h3>The village has a say.</h3><p>Current members vote privately. More yes than no, with a majority taking part, means you're in. A member's vouch counts as a yes.</p></div>
+      <div class="step"><span class="digit">04</span><h3>Your Sigil lights up.</h3><p>Agree to our Charter, enter the private member space, and get your door pass. You'll have a say in who joins next.</p></div>
+      <div class="step"><span class="digit">05</span><h3>Come to a House.</h3><p>We'll invite you to your first gathering. The private address arrives close to the date, and a host will welcome you in.</p></div>
+    </div>
+    <div class="membership-bottom"><div class="gate"><strong>A small thing to know</strong><p>For now, men join through an existing member's vouch. Women, non-binary people and couples can say hello directly.</p></div><div><p style="font-family:'C059',Georgia,serif;font-size:25px;margin:0 0 18px">Sounds like your sort of people?</p><a class="button dark" href="https://dionysty.pages.dev/app/#meet">Begin with Starlove</a><p style="font-size:12px;color:#8e7d7b;margin-top:15px">Your conversation is private. Your membership is never public.</p></div></div>
+  </div></section>
+
+  <section class="sigil"><div class="inner"><div class="sigil-layout">
+    <div><div class="eyebrow"><span class="star">✳</span>05 · Your Sigil</div><h2 class="section-title">A little symbol that's entirely yours.</h2><p>When you apply, you place ten points across the seven Temples. Together, they make your seven-pointed Sigil, a quiet way of showing what you're drawn to.</p><p>It starts unlit while your application is considered. Once you're welcomed in, it lights up. Inside the village, your alias and Sigil are how people know you. Your real name doesn't become part of anyone's public story.</p></div>
+    <div class="sigil-art"><svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Live preview of your seven-pointed Sigil"><circle cx="200" cy="200" r="180" fill="none" stroke="#a98379" opacity=".4"/><circle cx="200" cy="200" r="148" fill="none" stroke="#a98379" opacity=".5" stroke-dasharray="2 13"/><polygon id="sigilShape" points="200,50 348,160 292,330 108,330 52,160" fill="#b47c80" fill-opacity=".12" stroke="#98656b" stroke-width="3"/><g id="sigilNodes"></g><circle cx="200" cy="200" r="28" fill="#e8d4c2" stroke="#a87e76"/><text x="200" y="210" fill="#8c5a5c" text-anchor="middle" font-family="serif" font-size="30">✳</text></svg><small>Seven Temples · One private identity</small><div id="sigilProgress">Choose an interest above to see the Sigil change.</div></div>
+  </div></div></section>
+
+  <section id="charter" class="charter"><div class="inner">
+    <div class="charter-header"><div><div class="eyebrow" style="color:#d9a68e">✳ &nbsp;06 · The Charter</div><h2 class="section-title">Good company comes with good boundaries.</h2></div><p>We want everyone here to feel safe enough to be themselves. So the rules are simple, serious, and the same for members, founders, hosts and guests.</p></div>
+    <div class="principles">
+      <div class="principle"><span class="roman">I ·</span><h3>Consent</h3><p>Ask before touch. A yes can always become a no. Silence, hesitation or intoxication is not consent.</p></div>
+      <div class="principle"><span class="roman">II ·</span><h3>Respect</h3><p>No harassment, discrimination, intimidation or retaliation. Every person deserves dignity.</p></div>
+      <div class="principle"><span class="roman">III ·</span><h3>Discretion</h3><p>No public names, gossip, photos or screenshots. What people share stays private, except where safety or law requires otherwise.</p></div>
+      <div class="principle"><span class="roman">IV ·</span><h3>Reciprocity</h3><p>Bring consideration and generosity. Nobody owes anyone attention, company or intimacy.</p></div>
+      <div class="principle"><span class="roman">V ·</span><h3>Openness</h3><p>Different people and ideas are welcome. Curiosity is never an excuse to pressure or shame anyone.</p></div>
+      <div class="principle"><span class="roman">VI ·</span><h3>Accountability</h3><p>Concerns are heard privately and reviewed fairly. Hosts intervene when safety is at risk.</p></div>
+      <div class="principle"><span class="roman">VII ·</span><h3>Autonomy</h3><p>Every choice is yours. No required loyalty, disclosure, spending, exclusivity or participation. You can leave at any time.</p></div>
+      <div class="principle" style="background:#3d3139"><span class="roman">ALWAYS ·</span><h3>Adults only</h3><p>18+. Government ID is checked in person before the first gathering. No ID copies or numbers are kept.</p></div>
+    </div>
+    <div class="charter-rule"><div><strong>At a House</strong><p>Phones stay out of gathering spaces. No one takes photographs, including hosts. Every activity is optional. We don't pressure anyone to drink, spend, disclose, or do anything intimate.</p></div><div><strong>If something goes wrong</strong><p>Tell a host or founder privately, or a separate trusted contact if your concern involves a founder. Concerns are handled discreetly, with a fair review and immediate steps when needed. Consent violations end membership; retaliation is never accepted.</p></div></div>
+  </div></section>
+
+  <section id="safeguards" class="safeguards"><div class="inner"><div class="faq-layout">
+    <div><div class="eyebrow"><span class="star">✳</span>07 · Safeguards</div><h2 class="section-title">The practical things matter, too.</h2><p class="sidebar">You should be able to ask the awkward questions before you step into a room. Here are some answers, in plain English.</p></div>
+    <div class="accordion">
+      <details><summary>Are members adults? <span class="plus">+</span></summary><p class="answer">Everyone must be at least 18. A government ID is shown in person before attending a first House. We record only that the check happened, not an ID copy or number. Anyone under 18 is turned away.</p></details>
+      <details><summary>Who's responsible for safety? <span class="plus">+</span></summary><p class="answer">There are named hosts at every gathering, including a sober host who is awake and reachable. They can step in when consent or safety is at risk. There's also a separate trusted contact for concerns about a founder. We document action as appropriate. A serious consent breach ends membership.</p></details>
+      <details><summary>How does payment work? <span class="plus">+</span></summary><p class="answer">The contribution is the same regardless of gender, and you'll know it before committing. It covers things like the venue, food, artists and staff. Nobody is paid for anyone's company or intimacy, and sexual services are never bought or sold here.</p></details>
+      <details><summary>What about alcohol and substances? <span class="plus">+</span></summary><p class="answer">Alcohol is served only where the venue and required permissions allow it. There are no unlicensed sales and no illegal drugs. Nobody is pressured to drink. Hosts step in when someone is too intoxicated to give consent.</p></details>
+      <details><summary>Where are the gatherings? <span class="plus">+</span></summary><p class="answer">We meet in private venues and homes with the owner's knowledge of what's taking place. The exact address is shared only with confirmed guests, close to the gathering.</p></details>
+      <details><summary>Can anyone take photos? <span class="plus">+</span></summary><p class="answer">No. Phones are put away on arrival and nobody, including founders or hosts, photographs people in gathering spaces. We never publish members' names, faces or attendance. Website imagery is illustration, not member or event photography.</p></details>
+      <details><summary>What information do you keep? <span class="plus">+</span></summary><p class="answer">Only what's needed to run membership: your alias, Telegram ID or handle, optional Reddit handle, gender and how you'd attend, Temples and Sigil, member or vouch code, call time, application status, short answers and messages. Members voting see your alias, Temples, two answers, how you're attending, and who vouched, but not your Telegram ID or private messages. Votes remain anonymous. Members can message by alias through the bot; relay messages aren't retained unless part of a safety report. We don't ask for sexual orientation, health details, intimate preferences or ID numbers. Information is protected and deleted when you leave, are declined, or request it. You can use <code>/forget</code> in the bot.</p></details>
+      <details><summary>What if authorities need information? <span class="plus">+</span></summary><p class="answer">We cooperate with lawful requests and do not obstruct investigations. Privacy does not mean covering up harm. Age checks, consent processes and appropriate incident records support accountability.</p></details>
+    </div>
+  </div></div></section>
+
+  <section id="questions" class="questions"><div class="inner"><div class="faq-layout">
+    <div><div class="eyebrow"><span class="star">✳</span>08 · Good questions</div><h2 class="section-title">You might be wondering…</h2><p class="sidebar">We probably would be, too.</p></div>
+    <div class="accordion">
+      <details><summary>What actually happens at a House? <span class="plus">+</span></summary><p class="answer">Music, sometimes a live artist, good food, games, long conversations, and people worth meeting. Hosts make introductions and help small groups settle in. The First House is a Friday-to-Sunday weekend.</p></details>
+      <details><summary>Do I have to join every activity? <span class="plus">+</span></summary><p class="answer">Of course not. Sit something out. Spend an hour talking. Come for the music, the art, the ideas or simply the company. Everything is voluntary.</p></details>
+      <details><summary>Is this a dating thing? <span class="plus">+</span></summary><p class="answer">It isn't a dating app or a matchmaking service. You meet people in groups and get to know them over time. Connections of all kinds can happen, but nothing is promised or expected.</p></details>
+      <details><summary>Why do you use Telegram? <span class="plus">+</span></summary><p class="answer">You apply on our website and use Telegram to talk privately with Starlove, get call details and invitations, and message another member through their alias. Your phone number and handle aren't shown to other members. Your Sigil, member card and door pass live in the app.</p></details>
+      <details><summary>Will anyone know I'm a member? <span class="plus">+</span></summary><p class="answer">We do not publish members' names, faces, attendance or personal details. There are no public member galleries. Inside the club, discretion is part of the Charter: people don't share one another's identity or private conversations.</p></details>
+      <details><summary>How much does it cost? <span class="plus">+</span></summary><p class="answer">We'll tell you the contribution for a House before you commit, and we'll happily discuss costs on your call. There are no surprises at the door.</p></details>
+      <details><summary>What if something doesn't feel right? <span class="plus">+</span></summary><p class="answer">Tell a host or founder privately at any time. If your concern is about a founder, there's a separate trusted contact. We review concerns discreetly and take action where needed. You won't be punished for speaking up.</p></details>
+      <details><summary>Can I leave? <span class="plus">+</span></summary><p class="answer">Anytime, without an explanation. You don't owe the club loyalty, exclusivity or a goodbye speech. Ask us to remove your information, or use <code>/forget</code> in the bot.</p></details>
+    </div>
+  </div></div></section>
+
+  <section class="closing"><div class="inner"><div class="eyebrow" style="color:#d4a88e">✳ &nbsp;A PRIVATE VILLAGE · DELHI NCR</div><h2>If this sounds like your kind of room, we'd love to meet you.</h2><p>No grand introduction needed. Just come say hello. We'll take it from there.</p><a class="button light" href="https://dionysty.pages.dev/app/#meet">Begin with Starlove</a></div></section>
+  <footer><div class="inner"><div class="footer-top"><div class="footer-brand">✳ DIONYSTY</div><div class="footer-links"><a href="#club">The village</a><a href="#membership">Membership</a><a href="#charter">The Charter</a><a href="#safeguards">Safeguards</a><a href="#questions">Questions</a></div></div><div class="last"><div>Private by invitation. Thoughtful by design. Discretion, always.</div><div>All artwork is illustrative. No members or actual gatherings are pictured.</div></div></div></footer>
+</div>
+<dialog class="preview-dialog" id="joinPreview"><article><div class="eyebrow">FOUNDER PREVIEW</div><h2>The real hello happens with Starlove.</h2><p>This is an interactive copy and visual prototype. Its Temple points stay in your browser; they are not saved or sent anywhere.</p><p>The existing Dionysty application handles the private conversation and membership process.</p><div class="buttons"><button type="button" id="closePreview">Keep exploring</button><a class="button dark" href="https://dionysty.pages.dev/app/#meet" target="_blank" rel="noopener">Open live application</a></div></article></dialog>
+<script>
+  (() => {
+    const cards = [...document.querySelectorAll('.temple-grid .temple')].slice(0,7);
+    const levels = Array(7).fill(0);
+    const maxPoints = 10;
+    const count = document.getElementById('pointsCount');
+    const progress = document.getElementById('sigilProgress');
+    const shape = document.getElementById('sigilShape');
+    const nodes = document.getElementById('sigilNodes');
+    const xmlns='http://www.w3.org/2000/svg';
+
+    cards.forEach((card, index) => {
+      const controls = document.createElement('div');
+      controls.className='temple-controls';
+      controls.innerHTML='<button type="button" aria-label="Remove point">−</button><span aria-live="polite">0</span><button type="button" aria-label="Add point">+</button>';
+      card.appendChild(controls);
+      const [minus, value, plus] = controls.children;
+      minus.addEventListener('click', () => change(index,-1));
+      plus.addEventListener('click', () => change(index,1));
+      card.dataset.temple = index;
+      card._view={minus,value,plus};
+    });
+
+    function change(i,delta){
+      const total=levels.reduce((a,b)=>a+b,0);
+      if(delta>0 && total>=maxPoints) return;
+      if(delta<0 && levels[i]===0) return;
+      levels[i]+=delta;
+      render();
+    }
+
+    function render(){
+      const sum=levels.reduce((a,b)=>a+b,0);
+      count.textContent=`${sum} of ${maxPoints} points chosen${sum===10?' · Your Sigil is complete!':''}`;
+      progress.textContent=sum===0?'Choose an interest above to see the Sigil change.':sum===10?'Your ten points have formed a Sigil. This is only a local preview.':`${maxPoints-sum} points left to place.`;
+      cards.forEach((card,i)=>{
+        const {minus,value,plus}=card._view;
+        minus.disabled=levels[i]===0;
+        plus.disabled=sum>=maxPoints;
+        value.textContent=levels[i];
+        card.classList.toggle('selected',levels[i]>0);
+      });
+      const points=levels.map((level,i)=>{
+        const angle=-Math.PI/2+2*Math.PI*i/7;
+        const r=level===0?48:48+level*24;
+        return [200+Math.cos(angle)*r,200+Math.sin(angle)*r];
+      });
+      shape.setAttribute('points',points.map(p=>p.map(n=>n.toFixed(1)).join(',')).join(' '));
+      shape.setAttribute('fill-opacity',sum===10?'.32':'.13');
+      nodes.replaceChildren();
+      points.forEach(([cx,cy],i)=>{
+        const dot=document.createElementNS(xmlns,'circle');
+        dot.setAttribute('cx',cx);dot.setAttribute('cy',cy);dot.setAttribute('r',levels[i]>0?'7':'4');
+        dot.setAttribute('fill',levels[i]>0?'#915c66':'#bda7a3');
+        nodes.appendChild(dot);
+      });
+    }
+    render();
+
+    const dialog=document.getElementById('joinPreview');
+    document.getElementById('closePreview').addEventListener('click',()=>dialog.close());
+    document.querySelectorAll('a[href="https://dionysty.pages.dev/app/#meet"]').forEach(anchor=>{
+      if(anchor.closest('dialog')) return;
+      anchor.addEventListener('click',e=>{e.preventDefault();dialog.showModal();});
+    });
+    dialog.addEventListener('click',e=>{if(e.target===dialog) dialog.close();});
+  })();
+</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5f94d8f3b710b15',t:'MTc5NTUzMjYzMw=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5f94d8f3b710b15',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
