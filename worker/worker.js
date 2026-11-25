@@ -335,6 +335,8 @@ async function sweepExpiry(env) {
   ];
   const cutoff = now - D;
   if (cutoff >= RETENTION_START) {
+    const extIds = (await env.D1.prepare("SELECT id FROM media WHERE ext = 1 AND (id IN (SELECT body FROM dms WHERE at < ?1 AND id NOT IN (SELECT id FROM dm_save)) OR id IN (SELECT substr(body, 4) FROM dms WHERE at < ?1 AND id NOT IN (SELECT id FROM dm_save)))").bind(cutoff).all()).results || [];
+    for (const x of extIds) await mediaDrop(env, x.id);
     batch.push(env.D1.prepare('DELETE FROM media WHERE id IN (SELECT body FROM dms WHERE at < ?1 AND id NOT IN (SELECT id FROM dm_save))').bind(cutoff));
     batch.push(env.D1.prepare('DELETE FROM dms WHERE at < ?1 AND id NOT IN (SELECT id FROM dm_save)').bind(cutoff));
     batch.push(env.D1.prepare('DELETE FROM dm_save WHERE id NOT IN (SELECT id FROM dms)'));
@@ -3846,9 +3848,28 @@ async function v2Ready(env) {
     'CREATE TABLE IF NOT EXISTS dm_save (id INTEGER PRIMARY KEY, by TEXT, at INTEGER)',
   ];
   await env.D1.batch(q.map(function (s) { return env.D1.prepare(s); }));
+  try { await env.D1.prepare('ALTER TABLE media ADD ext INTEGER DEFAULT 0').run(); } catch (e) {}
   const v = await env.D1.prepare('SELECT COUNT(*) AS n FROM villages').first();
   if (!v || !v.n) await env.D1.prepare('INSERT OR IGNORE INTO villages (name, title, host, cx, cy, R, at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)').bind('Village 1', 'The First Village', '', -4290, 1105, 1170, Date.now()).run();
   v2IsReady = true;
+}
+async function mediaStore(env, id, blob) {
+  if (!env.MEDIA_BRIDGE_URL || !env.MEDIA_KEY) return false;
+  try {
+    const r = await fetch(env.MEDIA_BRIDGE_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ key: env.MEDIA_KEY, op: 'put', id: 'm_' + id, b64: blob }) });
+    const j = await r.json(); return !!(j && j.ok);
+  } catch (e) { return false; }
+}
+async function mediaFetch(env, id) {
+  if (!env.MEDIA_BRIDGE_URL || !env.MEDIA_KEY) return null;
+  try {
+    const r = await fetch(env.MEDIA_BRIDGE_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ key: env.MEDIA_KEY, op: 'get', id: 'm_' + id }) });
+    const j = await r.json(); return j && j.ok ? String(j.b64 || '') : null;
+  } catch (e) { return null; }
+}
+async function mediaDrop(env, id) {
+  if (!env.MEDIA_BRIDGE_URL || !env.MEDIA_KEY) return;
+  try { await fetch(env.MEDIA_BRIDGE_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ key: env.MEDIA_KEY, op: 'del', id: 'm_' + id }) }); } catch (e) {}
 }
 function v2Pair(a, b) { a = String(a); b = String(b); return a < b ? [a, b] : [b, a]; }
 async function v2Person(env, uid) { return await env.D1.prepare('SELECT uid, pid, alias, room, member, temples, since FROM people WHERE uid = ?1').bind(String(uid)).first(); }
@@ -4072,7 +4093,8 @@ async function v2Api(req, path, env, body, user, id, r) {
     const to = await v2ByPid(env, b.pid); if (!to) return J({ ok: false });
     const blob = String(b.blob || ''); if (blob.length > 900000) return J({ ok: false, error: 'That photo is too large.' });
     const mid = godHex(godRnd(12)), pr = v2Pair(me, to.uid);
-    await env.D1.prepare('INSERT INTO media (id, a, b, uid, blob, once, at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)').bind(mid, pr[0], pr[1], me, blob, b.once ? 1 : 0, now).run();
+    const ext = (await mediaStore(env, mid, blob)) ? 1 : 0;
+    await env.D1.prepare('INSERT INTO media (id, a, b, uid, blob, once, at, ext) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)').bind(mid, pr[0], pr[1], me, ext ? '' : blob, b.once ? 1 : 0, now, ext).run();
     return J({ ok: true, id: mid });
   }
   if (p === 'media/get') {
@@ -4080,8 +4102,10 @@ async function v2Api(req, path, env, body, user, id, r) {
     if (!m || (m.a !== me && m.b !== me)) return J({ ok: false, error: 'Not found.' }, 404);
     if (m.opened) return J({ ok: true, gone: true });
     if (m.once && m.uid === me) return J({ ok: true, sealed: true });
-    if (m.once) { await env.D1.prepare("UPDATE media SET opened = 1, blob = '' WHERE id = ?1").bind(m.id).run(); }
-    return J({ ok: true, blob: m.blob, once: !!m.once });
+    let blob = m.blob;
+    if (m.ext) { blob = await mediaFetch(env, m.id); if (blob === null) return J({ ok: true, gone: true }); }
+    if (m.once) { await env.D1.prepare("UPDATE media SET opened = 1, blob = '' WHERE id = ?1").bind(m.id).run(); if (m.ext) await mediaDrop(env, m.id); }
+    return J({ ok: true, blob: blob, once: !!m.once });
   }
   if (p === 'media/status') { const ids = (b.ids || []).slice(0, 100).map(String); if (!ids.length) return J({ ok: true, opened: {} }); const stm = env.D1.prepare('SELECT id, opened FROM media WHERE (a = ?1 OR b = ?1) AND id IN (' + ids.map(function (_, i) { return '?' + (i + 2); }).join(',') + ')'); const rows = (await stm.bind(me, ...ids).all()).results || []; const o = {}; rows.forEach(function (x) { o[x.id] = !!x.opened; }); return J({ ok: true, opened: o }); }
   /* editing and deleting your own private messages */
@@ -4089,7 +4113,9 @@ async function v2Api(req, path, env, body, user, id, r) {
     const m = await env.D1.prepare('SELECT id FROM dms WHERE id = ?1 AND uid = ?2').bind(Number(b.id) || 0, me).first();
     if (!m) return J({ ok: false, error: 'Not your message.' });
     if (p === 'dm/edit') { const body2 = String(b.body || ''); if (!body2 || body2.length > 20000) return J({ ok: false }); await env.D1.prepare('UPDATE dms SET body = ?2 WHERE id = ?1').bind(m.id, body2).run(); await env.D1.prepare('INSERT INTO dmx (id, edited) VALUES (?1, 1) ON CONFLICT(id) DO UPDATE SET edited = 1').bind(m.id).run(); }
-    else { await env.D1.prepare("UPDATE dms SET body = '' WHERE id = ?1").bind(m.id).run(); await env.D1.prepare('INSERT INTO dmx (id, del) VALUES (?1, 1) ON CONFLICT(id) DO UPDATE SET del = 1').bind(m.id).run(); await env.D1.prepare("DELETE FROM media WHERE uid = ?1 AND id IN (SELECT substr(body, 4) FROM dms WHERE id = ?2)").bind(me, m.id).run(); }
+    else { await env.D1.prepare("UPDATE dms SET body = '' WHERE id = ?1").bind(m.id).run(); await env.D1.prepare('INSERT INTO dmx (id, del) VALUES (?1, 1) ON CONFLICT(id) DO UPDATE SET del = 1').bind(m.id).run(); const mids = (await env.D1.prepare("SELECT id FROM media WHERE uid = ?1 AND ext = 1 AND id IN (SELECT substr(body, 4) FROM dms WHERE id = ?2)").bind(me, m.id).all()).results || [];
+    for (const x of mids) await mediaDrop(env, x.id);
+    await env.D1.prepare("DELETE FROM media WHERE uid = ?1 AND id IN (SELECT substr(body, 4) FROM dms WHERE id = ?2)").bind(me, m.id).run(); }
     return J({ ok: true });
   }
   if (p === 'dm/flags') { const ids = (b.ids || []).slice(0, 300).map(Number).filter(isFinite); if (!ids.length) return J({ ok: true, flags: {} }); const live = {}; ((await env.D1.prepare('SELECT id, a, b FROM dms WHERE id IN (' + ids.join(',') + ')').all()).results || []).forEach(function (x) { if (String(x.a) === String(me) || String(x.b) === String(me)) live[x.id] = 1; }); const o = {}; const rows = (await env.D1.prepare('SELECT id, edited, del FROM dmx WHERE id IN (' + ids.join(',') + ')').all()).results || []; rows.forEach(function (x) { if (live[x.id]) { o[x.id] = { edited: !!x.edited, del: !!x.del }; } }); const sv = (await env.D1.prepare('SELECT id, by FROM dm_save WHERE id IN (' + ids.join(',') + ')').all()).results || []; sv.forEach(function (x) { if (live[x.id]) { o[x.id] = o[x.id] || {}; o[x.id].saved = true; o[x.id].saved_by_me = String(x.by) === String(me); } }); ids.forEach(function (x) { if (!o[x] && !live[x]) o[x] = { gone: true }; }); return J({ ok: true, flags: o }); }
