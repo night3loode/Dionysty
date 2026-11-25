@@ -415,7 +415,7 @@ async function forgetAll(env, uid, opts) {
     try { const ext = (await env.D1.prepare('SELECT id FROM media WHERE ext = 1 AND (a = ?1 OR b = ?1 OR uid = ?1)').bind(id).all()).results || []; for (const x of ext) if (!(await mediaDrop(env, x.id))) keepIds.push(x.id); } catch (e) {}
     for (const [name, sql0] of stmts) {
       let sql = sql0;
-      if (name === 'media' && keepIds.length) sql += ' AND id NOT IN (' + keepIds.map((k) => "'" + String(k).replace(/[^0-9a-f]/gi, '') + "'").join(',') + ')';
+      if (name === 'media' && keepIds.length) sql = 'DELETE FROM media WHERE (' + sql0.replace('DELETE FROM media WHERE ', '') + ') AND id NOT IN (' + keepIds.map((k) => "'" + String(k).replace(/[^0-9a-f]/gi, '') + "'").join(',') + ')';
       try { const st = env.D1.prepare(sql); await (sql.indexOf('?1') >= 0 ? st.bind(id) : st).run(); } catch (e) { console.log('forgetAll ' + name, e && e.message); }
     }
     if (!o.keepRecord) {
@@ -4311,8 +4311,7 @@ async function v2Api(req, path, env, body, user, id, r) {
     const m = await env.D1.prepare('SELECT id, a, b FROM dms WHERE id = ?1').bind(mid).first();
     if (!m || (String(m.a) !== String(me) && String(m.b) !== String(me))) return J({ ok: false, error: 'Not found.' }, 404);
     const cur = await env.D1.prepare('SELECT id, by FROM dm_save WHERE id = ?1').bind(mid).first();
-    /* only the person who saved a message can unsave it; the other person can't make it disappear */
-    if (cur && String(cur.by) !== String(me)) return J({ ok: true, saved: true, saved_by_me: false });
+    /* either person in the DM can save or unsave; the saved state is shared, and saved_by_me tells each side who set it */
     if (cur) { await env.D1.prepare('DELETE FROM dm_save WHERE id = ?1').bind(mid).run(); return J({ ok: true, saved: false }); }
     await env.D1.prepare('INSERT INTO dm_save (id, by, at) VALUES (?1, ?2, ?3)').bind(mid, String(me), Date.now()).run();
     return J({ ok: true, saved: true, saved_by_me: true });

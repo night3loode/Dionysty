@@ -91,7 +91,7 @@ t('fallback get ok', get3.blob === 'ZmFsbGJhY2s=');
 
 // sweep: old unsaved dm with ext media -> bridge del + row delete
 const old = Date.now() - 2 * 86400000;
-db.prepare("INSERT INTO dms (a, b, uid, body, at) VALUES ('111','222','111',?1,?2)").run('img' + put.id, old);
+db.prepare("INSERT INTO dms (a, b, uid, body, at) VALUES ('111','222','111',?1,?2)").run('mx:' + put.id, old);
 db.prepare("UPDATE media SET at = ?1 WHERE id = ?2").run(old, put.id);
 // the sweep only deletes once now - 24h >= RETENTION_START (1795619418620 = 25 Nov 2026 15:10 UTC),
 // so run it with the clock moved past the grace period, or the test depends on the day it runs
@@ -134,8 +134,8 @@ t('mpurge row cleared after confirm', !db.prepare('SELECT id FROM mpurge WHERE i
 
 // 2) dm/del with bridge del failing: media row gone from D1, blob id queued
 const put5 = await call('media/put', { pid: 'p2', blob: 'ZG1kZWwtcGF5bG9hZA==', once: 0 }, '111');
-db.prepare("INSERT INTO dms (a, b, uid, body, at) VALUES ('111','222','111',?1,?2)").run('img' + put5.id, Date.now());
-const dmsRow = db.prepare("SELECT id FROM dms WHERE body = ?1").get('img' + put5.id);
+db.prepare("INSERT INTO dms (a, b, uid, body, at) VALUES ('111','222','111',?1,?2)").run('mx:' + put5.id, Date.now());
+const dmsRow = db.prepare("SELECT id FROM dms WHERE body = ?1").get('mx:' + put5.id);
 bridgeStore.delete = () => { throw new Error('del boom'); };
 const delRes = await call('dm/del', { id: dmsRow.id }, '111');
 t('dm/del ok despite bridge failure', delRes.ok === true);
@@ -146,10 +146,12 @@ await w.scheduled({}, env, {});
 t('dm/del purge completed on retry', !bridgeStore.has('m_' + put5.id) && !db.prepare('SELECT id FROM mpurge WHERE id = ?1').get(put5.id));
 
 // 3) sweep with bridge del failing: rows deleted, blob id queued, retried to confirm
+// the 24h DM rule only runs once now - 24h is past RETENTION_START, so pin the clock after the grace period (otherwise this test depends on the day it runs)
+const realNow6 = Date.now; Date.now = () => 1795619418620 + 2 * 86400000 + 3600000;
 const put6 = await call('media/put', { pid: 'p2', blob: 'c3dlZXAtcGF5bG9hZA==', once: 0 }, '111');
-db.prepare("INSERT INTO dms (a, b, uid, body, at) VALUES ('111','222','111',?1,?2)").run('img' + put6.id, Date.now());
+db.prepare("INSERT INTO dms (a, b, uid, body, at) VALUES ('111','222','111',?1,?2)").run('mx:' + put6.id, Date.now());
 const old6 = Date.now() - 2 * 86400000;
-db.prepare("UPDATE dms SET at = ?1 WHERE body = ?2").run(old6, 'img' + put6.id);
+db.prepare("UPDATE dms SET at = ?1 WHERE body = ?2").run(old6, 'mx:' + put6.id);
 db.prepare("UPDATE media SET at = ?1 WHERE id = ?2").run(old6, put6.id);
 bridgeStore.delete = () => { throw new Error('del boom'); };
 await w.scheduled({}, env, {});
@@ -158,6 +160,7 @@ t('sweep queued purge', !!db.prepare('SELECT id FROM mpurge WHERE id = ?1').get(
 bridgeStore.delete = origDel;
 await w.scheduled({}, env, {});
 t('sweep purge completed on retry', !bridgeStore.has('m_' + put6.id) && !db.prepare('SELECT id FROM mpurge WHERE id = ?1').get(put6.id));
+Date.now = realNow6;
 
 // 4) notfound counts as physically gone: no mpurge row
 const put7 = await call('media/put', { pid: 'p2', blob: 'Z29uZS1hbHJlYWR5', once: 1 }, '111');

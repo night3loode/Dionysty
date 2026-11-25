@@ -1,0 +1,25 @@
+const {chromium}=require('playwright');const http=require('http'),fs=require('fs'),path=require('path');
+const root='/tmp/claude-0/-home-user/b3cd05a1-4680-500a-b440-2428724cd6ee/scratchpad/apptest';
+const srv=http.createServer((q,r)=>{let p=decodeURIComponent(q.url.split('?')[0]);if(p.endsWith('/'))p+='index.html';const f=path.join(root,p);if(!fs.existsSync(f)){r.writeHead(404);return r.end()}r.writeHead(200,{'content-type':p.endsWith('.html')?'text/html':'image/webp'});fs.createReadStream(f).pipe(r)}).listen(8769);
+(async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844},deviceScaleFactor:2});
+let saved=false;const seen=[];
+await c.route(/telegram\.org|jsdelivr|fonts\./,r=>r.abort());
+await c.route(/workers\.dev/,async r=>{const u=r.request().url();const p=u.split('/api/')[1];seen.push(p);let body={ok:true};
+ if(p==='sq/h/dm/thread')body={ok:true,msgs:[{id:5,mine:false,body:'hello from Two',at:Date.now()-3600000},{id:6,mine:true,body:'hi back',at:Date.now()-1800000},{id:7,mine:false,body:'mx:abc123',at:Date.now()-600000}]};
+ if(p==='sq/v2/dm/flags')body={ok:true,flags:{6:{saved:true,saved_by_me:false}}};
+ if(p==='sq/v2/dm/save'){saved=!saved;body={ok:true,saved:saved,saved_by_me:saved}}
+ if(p==='sq/v2/media/get')body={ok:true,blob:'x" onerror="window.__pwned=1'};
+ if(p==='me')body={ok:true,me:{alias:'Test',code:'DNY-TEST11',member:{room:'V'}}};
+ await r.fulfill({status:200,contentType:'application/json',body:JSON.stringify(body)})});
+await c.addInitScript(()=>{try{localStorage.setItem('dy_login','{"id":1,"hash":"x"}')}catch(e){}});
+const p=await c.newPage();const errs=[];p.on('pageerror',e=>errs.push(e.message.slice(0,140)));
+await p.goto('http://localhost:8769/app/#go');await p.waitForTimeout(4000);
+await p.evaluate(()=>{__T.msgs();__T.THREADS()['p2']=[];__T.open('p2')});await p.waitForTimeout(2500);
+const s1=await p.evaluate(()=>({ret:(document.querySelector('.dt-ret')||{}).textContent,btns:[...document.querySelectorAll('#dt-lines .dt-sv')].map(b=>b.textContent+(b.disabled?'(off)':'')),pwned:!!window.__pwned}));
+console.log('thread:',JSON.stringify(s1));
+await p.screenshot({path:'pr-shots/after-mobile-dm-thread.png'});
+await p.evaluate(()=>{const b=[...document.querySelectorAll('#dt-lines .dt-sv')].find(b=>b.textContent==='☆');b&&b.click()});await p.waitForTimeout(800);
+const s2=await p.evaluate(()=>[...document.querySelectorAll('#dt-lines .dt-sv')].map(b=>b.textContent));
+console.log('after tap:',JSON.stringify(s2),'save calls',seen.filter(x=>x==='sq/v2/dm/save').length);
+await p.screenshot({path:'pr-shots/after-mobile-dm-saved.png'});
+console.log('errors',JSON.stringify([...new Set(errs)]));await b.close();srv.close()})();

@@ -785,7 +785,7 @@ window.hsPaint=paint;try{hsPaint=paint}catch(e){}
 /* ✦ retention on the thread people actually use: unsaved private messages disappear 24 hours after
    they're sent (messages from before RETENTION_START got a fresh 24 hours from then). The notice and
    the Save toggle used to live only on the old thread screen; this puts both on #dm-thread.
-   Only the person who saved a message can unsave it. */
+   Either person in the DM can save or unsave it. */
 !function(){
   var SV={};
   var c0=call0;
@@ -818,7 +818,7 @@ window.hsPaint=paint;try{hsPaint=paint}catch(e){}
   function note(){
     return Date.now()<GRACE_END
       ? 'Unsaved messages now disappear 24 hours after they’re sent. Messages already here are kept until '+when(GRACE_END)+'. Tap ☆ to keep one.'
-      : 'Unsaved messages disappear 24 hours after they’re sent. Tap ☆ to keep one; it stays until whoever saved it unsaves it.';
+      : 'Unsaved messages disappear 24 hours after they’re sent. Tap ☆ to keep one; either of you can unsave it later.';
   }
   function toggle(id,btn){
     if(btn.disabled)return;btn.disabled=true;
@@ -827,7 +827,7 @@ window.hsPaint=paint;try{hsPaint=paint}catch(e){}
       if(!r||!r.ok)return fail();
       SV[id]={saved:!!r.saved,mine:!!r.saved&&r.saved_by_me!==false};
       try{buzz('success')}catch(e){}
-      try{skyFlashSoft(r.saved?(SV[id].mine?'Saved. It won’t disappear.':'They saved this one.'):'Unsaved. It disappears 24 hours after it was sent.')}catch(e){}
+      try{skyFlashSoft(r.saved?(SV[id].mine?'Saved. It won’t disappear.':'Saved. It won’t disappear.'):'Unsaved. It disappears 24 hours after it was sent.')}catch(e){}
       dmPaint();
     },fail);
   }
@@ -843,9 +843,8 @@ window.hsPaint=paint;try{hsPaint=paint}catch(e){}
       var s=SV[m.id]||{},b=document.createElement('button');
       b.type='button';b.className='dt-sv'+(s.saved?' on':'');
       b.textContent=s.saved?(s.mine?'★ Saved':'★ Saved by them'):'☆';
-      b.setAttribute('aria-label',s.saved?(s.mine?'Saved. Tap to unsave':'Saved by them'):'Save this message');
+      b.setAttribute('aria-label',s.saved?(s.mine?'Saved. Tap to unsave':'Saved by them. Tap to unsave'):'Save this message');
       b.setAttribute('aria-pressed',s.saved?'true':'false');
-      if(s.saved&&!s.mine)b.disabled=true;
       b.onclick=function(ev){ev.stopPropagation();toggle(m.id,b)};
       el.appendChild(b);
     });
@@ -854,6 +853,7 @@ window.hsPaint=paint;try{hsPaint=paint}catch(e){}
   dmPaint=function(){p0.apply(this,arguments);try{deco()}catch(e){}};
   var st=document.createElement('style');
   st.textContent='.dt-ret{margin:6px auto 14px;max-width:420px;padding:9px 14px;border-radius:14px;border:1px solid rgba(216,180,131,.22);text-align:center;font:300 12.5px/1.5 Jost,sans-serif;color:rgba(241,227,201,.7)}'
+    +'#dm-toast{top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 176px)}'
     +'.dt-sv{display:block;margin:2px 4px 0;padding:4px 6px;min-width:32px;min-height:28px;border:0;background:none;color:rgba(216,180,131,.55);font:400 13px Jost,sans-serif;cursor:pointer}'
     +'.dt-m .dt-sv{align-self:flex-start}.dt-m.me .dt-sv{align-self:flex-end;margin-left:auto}.dt-sv.on{color:#d8b483;font-size:11px;letter-spacing:.04em}.dt-sv:disabled{cursor:default}.dt-sv:focus-visible{outline:1px solid #d8b483;border-radius:8px}';
   document.head.appendChild(st);
