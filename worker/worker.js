@@ -320,31 +320,137 @@ const dyMain = {
   async scheduled(event, env, ctx) {
     env = { ...env, __ctx: ctx };
     try { await callReminders(env); } catch (e) { console.log('callReminders', e && e.message); }
-    await sweepVotes(env);
+    try { await sweepVotes(env); } catch (e) { console.log('sweepVotes', e && e.message); }
     try { await sweepExpiry(env); } catch (e) { console.log('sweepExpiry', e && e.message); }
+    try { await sweepOrphans(env); } catch (e) { console.log('sweepOrphans', e && e.message); }
   },
 };
 /* retention: space 7d, starlove 90d, unsaved DMs and their media 24h from creation */
 /* activation cutoff, set to the feature go-live timestamp at deploy: pre-existing DMs/media get a fresh 24h grace from activation before the unsaved-24h rule applies; space keeps its pre-existing 7d rule; starlove sweeps only post-activation records */
 const RETENTION_START = 1795619418620;
+/* Each step runs on its own, so one missing table or failed query can't stop the others
+   (the old single batch rolled everything back if any table was missing). */
 async function sweepExpiry(env) {
   const now = Date.now(), D = 86400000;
-  const batch = [
-    env.D1.prepare('DELETE FROM msgs WHERE at < ?1').bind(now - 7 * D),
-    env.D1.prepare('DELETE FROM sl_msgs WHERE at < ?1 AND at >= ?2').bind(now - 90 * D, RETENTION_START),
+  const steps = [
+    ['space', env.D1.prepare('DELETE FROM msgs WHERE at < ?1').bind(now - 7 * D)],
+    ['starlove', env.D1.prepare('DELETE FROM sl_msgs WHERE at < ?1 AND at >= ?2').bind(now - 90 * D, RETENTION_START)],
   ];
   const cutoff = now - D;
   if (cutoff >= RETENTION_START) {
-    const extIds = (await env.D1.prepare("SELECT id FROM media WHERE ext = 1 AND (id IN (SELECT body FROM dms WHERE at < ?1 AND id NOT IN (SELECT id FROM dm_save)) OR id IN (SELECT substr(body, 4) FROM dms WHERE at < ?1 AND id NOT IN (SELECT id FROM dm_save)))").bind(cutoff).all()).results || [];
-    for (const x of extIds) await mediaDrop(env, x.id);
-    batch.push(env.D1.prepare("DELETE FROM media WHERE id IN (SELECT body FROM dms WHERE at < ?1 AND id NOT IN (SELECT id FROM dm_save)) OR id IN (SELECT substr(body, 4) FROM dms WHERE at < ?2 AND id NOT IN (SELECT id FROM dm_save))").bind(cutoff, cutoff));
-    batch.push(env.D1.prepare('DELETE FROM dms WHERE at < ?1 AND id NOT IN (SELECT id FROM dm_save)').bind(cutoff));
-    batch.push(env.D1.prepare('DELETE FROM dm_save WHERE id NOT IN (SELECT id FROM dms)'));
-    batch.push(env.D1.prepare('DELETE FROM dmx WHERE id NOT IN (SELECT id FROM dms)'));
+    steps.push(['dms', env.D1.prepare('DELETE FROM dms WHERE at < ?1 AND id NOT IN (SELECT id FROM dm_save)').bind(cutoff)]);
+    steps.push(['dm_save', env.D1.prepare('DELETE FROM dm_save WHERE id NOT IN (SELECT id FROM dms)')]);
+    steps.push(['dmx', env.D1.prepare('DELETE FROM dmx WHERE id NOT IN (SELECT id FROM dms)')]);
+    /* photos: a DM points at its photo as "mx:<id>" or "mx:<id>|o" / "|v", so match on the id, not the whole body.
+       Any photo older than 24h that no remaining (saved or recent) message points at is deleted,
+       including photos that were uploaded but never sent. Photos kept in Drive (ext = 1) are dropped there first. */
+    steps.push(['media', { run: async function () {
+      const orphan = "at < ?1 AND NOT EXISTS (SELECT 1 FROM dms d WHERE d.body = media.id OR d.body = 'mx:' || media.id OR d.body LIKE 'mx:' || media.id || '|%' OR substr(d.body, 4) = media.id)";
+      const ext = (await env.D1.prepare('SELECT id FROM media WHERE ext = 1 AND ' + orphan).bind(cutoff).all()).results || [];
+      /* mediaDrop is true once the Drive blob is confirmed gone or its id is durably queued in mpurge;
+         a row whose locator could not be queued is kept so the next sweep retries it */
+      const keep = [];
+      for (const x of ext) if (!(await mediaDrop(env, x.id))) keep.push(x.id);
+      const hold = keep.length ? ' AND id NOT IN (' + keep.map(() => '?').join(',') + ')' : '';
+      await env.D1.prepare('DELETE FROM media WHERE ' + orphan + hold).bind(cutoff, ...keep).run();
+    } }]);
   }
-  await env.D1.batch(batch);
+  for (const [name, st] of steps) {
+    try { await st.run(); } catch (e) { console.log('sweepExpiry ' + name, e && e.message); }
+  }
   try { await mediaPurgeSweep(env); } catch (e) { console.log('mediaPurgeSweep', e && e.message); }
-};
+}
+
+/* ---------- full deletion (/forget, and app data on decline) ----------
+   Deletes everything held about one person except public-space data: their lines in open circles
+   (hushed = 0, or the welcome circle) stay, shown without their alias once the people row is gone,
+   and audit logs (adlog, god_log) stay so actions can still be accounted for.
+   Blocks other people made against them also stay, so a block survives them re-joining.
+   Each statement runs on its own: some tables are created lazily and may not exist yet. */
+async function forgetAll(env, uid, opts) {
+  const id = String(uid), o = opts || {};
+  if (env.D1) {
+    const stmts = [
+      ['pgmsg', 'DELETE FROM pgmsg WHERE uid = ?1 OR intro IN (SELECT id FROM pgintro WHERE uid = ?1 OR by = ?1 OR to_uid = ?1)'],
+      ['pgparts', 'DELETE FROM pgparts WHERE intro IN (SELECT id FROM pgintro WHERE uid = ?1 OR by = ?1 OR to_uid = ?1)'],
+      ['pgseen', 'DELETE FROM pgseen WHERE uid = ?1 OR intro IN (SELECT id FROM pgintro WHERE uid = ?1 OR by = ?1 OR to_uid = ?1)'],
+      ['pgintro', 'DELETE FROM pgintro WHERE uid = ?1 OR by = ?1 OR to_uid = ?1'],
+      ['pilgrims', 'DELETE FROM pilgrims WHERE uid = ?1 OR target = ?1'],
+      ['media', 'DELETE FROM media WHERE a = ?1 OR b = ?1 OR uid = ?1'],
+      ['dms', 'DELETE FROM dms WHERE a = ?1 OR b = ?1 OR uid = ?1'],
+      ['dm_save', 'DELETE FROM dm_save WHERE by = ?1 OR id NOT IN (SELECT id FROM dms)'],
+      ['dmx', 'DELETE FROM dmx WHERE id NOT IN (SELECT id FROM dms)'],
+      ['dmnote', 'DELETE FROM dmnote WHERE to_uid = ?1 OR from_uid = ?1'],
+      ['talks', 'DELETE FROM talks WHERE a = ?1 OR b = ?1'],
+      ['creqs', 'DELETE FROM creqs WHERE a = ?1 OR b = ?1'],
+      ['blocks', 'DELETE FROM blocks WHERE a = ?1'],
+      ['lines', 'DELETE FROM lines WHERE uid = ?1 AND cid NOT IN (SELECT id FROM circles WHERE hushed = 0 OR welcome = 1)'],
+      ['seats', 'DELETE FROM seats WHERE uid = ?1'],
+      ['knocks', 'DELETE FROM knocks WHERE uid = ?1'],
+      ['departs', 'DELETE FROM departs WHERE uid = ?1'],
+      ['invites', 'DELETE FROM invites WHERE a = ?1 OR b = ?1'],
+      ['owned', 'DELETE FROM owned WHERE uid = ?1'],
+      ['met', 'DELETE FROM met WHERE a = ?1 OR b = ?1'],
+      ['together', 'DELETE FROM together WHERE a = ?1 OR b = ?1'],
+      ['presence', 'DELETE FROM presence WHERE uid = ?1'],
+      ['prefs', 'DELETE FROM prefs WHERE uid = ?1'],
+      ['looks', 'DELETE FROM looks WHERE uid = ?1'],
+      ['places', 'DELETE FROM places WHERE uid = ?1'],
+      ['duties', 'DELETE FROM duties WHERE by = ?1'],
+      ['tokens', 'DELETE FROM tokens WHERE uid = ?1'],
+      ['tokenlog', 'DELETE FROM tokenlog WHERE uid = ?1'],
+      ['vapps', 'DELETE FROM vapps WHERE uid = ?1'],
+      ['vvotes', 'DELETE FROM vvotes WHERE uid = ?1'],
+      ['readynote', 'DELETE FROM readynote WHERE aid = ?1'],
+      ['fly_line', 'DELETE FROM fly_line WHERE uid = ?1 OR pr IN (SELECT id FROM fly_pair WHERE a = ?1 OR b = ?1)'],
+      ['fly_rep', 'DELETE FROM fly_rep WHERE by = ?1 OR who = ?1'],
+      ['fly_pair', 'DELETE FROM fly_pair WHERE a = ?1 OR b = ?1'],
+      ['fly_ask', 'DELETE FROM fly_ask WHERE a = ?1 OR b = ?1'],
+      ['fly_pos', 'DELETE FROM fly_pos WHERE uid = ?1'],
+      ['sl_msgs', "DELETE FROM sl_msgs WHERE dest = 'tg:' || ?1"],
+    ];
+    /* photos kept in Drive (ext = 1) are deleted there before their rows go */
+    /* a photo whose Drive delete could not be confirmed or queued keeps its row, so a later /forget or sweep retries it */
+    const keepIds = [];
+    try { const ext = (await env.D1.prepare('SELECT id FROM media WHERE ext = 1 AND (a = ?1 OR b = ?1 OR uid = ?1)').bind(id).all()).results || []; for (const x of ext) if (!(await mediaDrop(env, x.id))) keepIds.push(x.id); } catch (e) {}
+    for (const [name, sql0] of stmts) {
+      let sql = sql0;
+      if (name === 'media' && keepIds.length) sql = 'DELETE FROM media WHERE (' + sql0.replace('DELETE FROM media WHERE ', '') + ') AND id NOT IN (' + keepIds.map((k) => "'" + String(k).replace(/[^0-9a-f]/gi, '') + "'").join(',') + ')';
+      try { const st = env.D1.prepare(sql); await (sql.indexOf('?1') >= 0 ? st.bind(id) : st).run(); } catch (e) { console.log('forgetAll ' + name, e && e.message); }
+    }
+    if (!o.keepRecord) {
+      for (const sql of ['DELETE FROM people WHERE uid = ?1', 'DELETE FROM bonds WHERE a = ?1 OR b = ?1', 'DELETE FROM vouches WHERE aid = ?1 OR vid = ?1']) {
+        try { await env.D1.prepare(sql).bind(id).run(); } catch (e) {}
+      }
+    }
+  }
+  if (o.keepRecord) return;
+  /* KV keys that carry their id: relay maps, first-contact/pending flags, swaps, handle-swap requests */
+  try {
+    for (const pre of ['x:' + id + ':', 'ok:' + id + ':', 'pend:' + id + ':', 'blk:' + id + ':', 'swr:' + id + ':', 'rq:' + id + ':']) await kvDropPrefix(env, pre, null);
+    for (const pre of ['ok:', 'pend:', 'swr:', 'swd:']) await kvDropPrefix(env, pre, (k) => k.endsWith(':' + id) || k.indexOf(':' + id + ':') > 0);
+  } catch (e) { console.log('forgetAll kv', e && e.message); }
+}
+async function kvDropPrefix(env, prefix, keep) {
+  let cursor;
+  do {
+    const page = await env.DB.list({ prefix, cursor });
+    for (const k of page.keys) if (!keep || keep(k.name)) await env.DB.delete(k.name);
+    cursor = page.list_complete ? null : page.cursor;
+  } while (cursor);
+}
+/* Once a day: applicants whose bot record has expired (KV TTL) leave a D1 people row and app data behind;
+   KV expiry can't trigger code, so find those rows here and finish the deletion. */
+async function sweepOrphans(env) {
+  if (!env.D1) return;
+  const day = new Date().toISOString().slice(0, 10);
+  if (await env.DB.get('sweep:orphans:' + day)) return;
+  await env.DB.put('sweep:orphans:' + day, '1', { expirationTtl: 3 * 86400 });
+  const rows = (await env.D1.prepare("SELECT uid FROM people WHERE member = 0 AND uid NOT LIKE 'bot:%' LIMIT 500").all()).results || [];
+  for (const x of rows) {
+    if (!(await env.DB.get('u:' + x.uid))) await forgetAll(env, x.uid);
+  }
+}
 
 // One-time: open /setup in a browser after deploying (re-run after changing secrets).
 async function setup(url, env) {
@@ -401,9 +507,11 @@ async function onPrivate(m, cmd, env) {
       if (r.member) await roomRemove(env, r.member.room, id);
       await dropVote(env, id);
       await delRec(env, id, r);
+      await forgetAll(env, id);
       if (r.code) await sheet(env, 'delete', { code: r.code });
       if (r.alias) await team(env, `🗑 ${label(r)} used /forget. Bot record deleted — their Ledger row and messages were removed; delete their messages in this group too.`);
     }
+    if (!r) await forgetAll(env, id);
     return say(env, id, TEXT.forgotten);
   }
   if (cmd === '/privacy') return say(env, id, TEXT.privacy(r));
@@ -1378,6 +1486,9 @@ async function onJoinRequest(q, env) {
 async function decline(env, aid, a, how) {
   a.stage = 'Declined';
   await putRec(env, aid, a);
+  /* their app data goes now; the bot record stays (so the team can still write to them) until it expires,
+     then sweepOrphans removes what's left */
+  try { await forgetAll(env, aid, { keepRecord: true }); } catch (e) {}
   await sheetPerson(env, a);
   const sent = await team(env, `✖️ ${label(a)} was not admitted (${how}). They haven’t been told: reply to this message to write to them.`);
   if (sent && sent.ok) await link(env, sent.result.message_id, aid);
@@ -1404,6 +1515,9 @@ async function founderDecide(env, aid, a, yes, who) {
 async function onFounderButton(env, q, ack, setKb) {
   const [, val, aid] = q.data.split('|');
   if (!isFounder(env, q.from.id)) return ack('Only a founder can decide this.');
+  /* with FOUNDER_IDS unset, isFounder() is true for anyone, and this button can be pressed from any chat
+     the card is forwarded to; then only people in the team chat may decide */
+  if (!String(env.FOUNDER_IDS || '').trim() && !(await isTeam(env, q.from.id))) return ack('Only a founder can decide this.');
   const a = await getRec(env, aid);
   await ack();
   await setKb([]);
@@ -1948,8 +2062,9 @@ function templesFromPoints(pts) {
   return ks.length ? ks : ['unsure'];
 }
 async function recByCode(env, code) {
-  const c = String(code || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
-  if (!c) return null;
+  /* codes are stored as c:DNY-XXXXXX, so keep the hyphen (it used to be stripped, so no code ever matched) */
+  const c = String(code || '').trim().toUpperCase().replace(/[^A-Z0-9-]/g, '').replace(/^DNY(?!-)/, 'DNY-');
+  if (!/^DNY-[A-Z0-9]{4,8}$/.test(c)) return null;
   const uid = await env.DB.get('c:' + c);
   if (!uid) return null;
   const rec = await getRec(env, uid);
@@ -2067,11 +2182,12 @@ async function makePass(env, code) {
   return { token: 'DY1-' + code + '-' + w.toString(36) + '-' + (await passSig(env, code, w)), validFor: Math.round(((w + 1) * PASS_STEP_MS - Date.now()) / 1000) };
 }
 async function readPass(env, token) {
-  const m = /^DY1-([A-Z0-9]+)-([a-z0-9]+)-([0-9a-f]{12})$/.exec(String(token || '').trim());
+  /* member codes contain a hyphen (DNY-XXXXXX), which the old pattern rejected, so no pass ever verified */
+  const m = /^DY1-((?:DNY-)?[A-Z0-9]+)-([a-z0-9]+)-([0-9a-f]{12})$/.exec(String(token || '').trim());
   if (!m) return { ok: false, reason: 'Not a DIONYSTY pass.' };
   const w = parseInt(m[2], 36);
   const now = Math.floor(Date.now() / PASS_STEP_MS);
-  if (!(w === now || w === now - 1 || w === now - 2)) return { ok: false, reason: 'This pass has expired. Ask them to open it again (screenshots don’t work).' };
+  if (!(w === now || w === now - 1)) return { ok: false, reason: 'This pass has expired. Ask them to open it again (screenshots don’t work).' };
   if ((await passSig(env, m[1], w)) !== m[3]) return { ok: false, reason: 'This pass isn’t genuine.' };
   return { ok: true, code: m[1] };
 }
@@ -2106,7 +2222,7 @@ const teamKb = (env, text, kb) => (env.TEAM_CHAT_ID ? say(env, env.TEAM_CHAT_ID,
 /* ===== Village Square, bonds and the waitlist (added 18 Nov 2026). D1 binding: D1. BOND_TARGET (default 3) = bonds with members that carry an applicant in. ===== */
 let SQ_READY = false;
 const SQ_BASE = 'https://dionysty.pages.dev/app/';
-const SQ_APP = SQ_BASE + '#go';
+const SQ_APP = SQ_BASE + '#go'; // already carries its hash: don't append another (it made /app/#go#go and #go#dm)
 const sqTarget = (env) => Math.max(1, Math.floor(Number(env.BOND_TARGET) || 3));
 const sqParse = (s) => { try { return JSON.parse(s); } catch (e) { return null; } };
 async function sqPid(env, uid) {
@@ -2187,11 +2303,12 @@ async function sqApi(req, path, env, body, user, id, r) {
     await sqSync(env, me, r);
     if (!r.member) await sqMaybeAdmit(env, me);
     await adReady(env);
-    const view = String(body.room || room).slice(0, 60);
+    const core = await adCore(env, me);
+    /* only members (and core) may look inside another village; applicants see their own */
+    const view = String((body.room && (r.member || core) ? body.room : '') || room).slice(0, 60);
     const own = view === room;
     const vcfg = await adCfg(env);
     const vmemo = new Map();
-    const core = await adCore(env, me);
     await hReady(env);
     const metRows = new Map(((await D1.prepare('SELECT a, b, secs FROM together WHERE a = ?1 OR b = ?1').bind(me).all()).results || []).map((x) => [x.a === me ? x.b : x.a, x.secs]));
     const myW = core ? vcfg.core : r.member && !r.member.suspended ? await vWeight(env, me, 'member', vcfg, vmemo) : 0;
@@ -2263,7 +2380,7 @@ async function sqApi(req, path, env, body, user, id, r) {
     if ((theirs && theirs.status === 'bonded') || (mine && mine.status === 'bonded')) return apiJson(req, { ok: true, bond: 'bonded' });
     if (theirs) {
       await D1.batch([D1.prepare("UPDATE bonds SET status = 'bonded', at = ?3 WHERE a = ?1 AND b = ?2").bind(t.uid, me, now), D1.prepare('DELETE FROM bonds WHERE a = ?1 AND b = ?2').bind(me, t.uid)]);
-      const open = [[{ text: 'Open the Village', url: SQ_APP + '#go' }]];
+      const open = [[{ text: 'Open the Village', url: SQ_APP }]];
       await say(env, t.uid, '✦ You and ' + (r.alias || 'someone') + ' are bonded now.', open);
       await say(env, me, '✦ You and ' + (t.alias || 'someone') + ' are bonded now.', open);
       await sqMaybeAdmit(env, t.uid);
@@ -2277,7 +2394,7 @@ async function sqApi(req, path, env, body, user, id, r) {
     const today = await D1.prepare('SELECT COUNT(*) AS n FROM bonds WHERE a = ?1 AND at > ?2').bind(me, now - 86400000).first();
     if (today && today.n >= 15) return apiJson(req, { ok: false, error: 'That’s plenty of bonds for one day. Try again tomorrow.' }, 429);
     await D1.prepare("INSERT INTO bonds (a, b, status, at) VALUES (?1, ?2, 'pending', ?3)").bind(me, t.uid, now).run();
-    await say(env, t.uid, '✦ ' + (r.alias || 'Someone') + ' would like to bond with you in the Village.', [[{ text: 'See their Sigil', url: SQ_APP + '#go' }]]);
+    await say(env, t.uid, '✦ ' + (r.alias || 'Someone') + ' would like to bond with you in the Village.', [[{ text: 'See their Sigil', url: SQ_APP }]]);
     return apiJson(req, { ok: true, bond: 'sent' });
   }
   if (path === '/api/sq/vote') {
@@ -2522,7 +2639,7 @@ async function hApi(req, path, env, body, me, r, room, now) {
       const later = (await D1.prepare("SELECT id, uid FROM knocks WHERE cid = ?1 AND status = 'later'").bind(c.id).all()).results || [];
       for (const k of later) {
         await D1.prepare("UPDATE knocks SET status = 'invited', at = ?2 WHERE id = ?1").bind(k.id, now).run();
-        if (!(await hQuiet(env, k.uid))) await say(env, k.uid, '✦ The circle on “' + c.topic + '” in ' + HV[c.vibe].name + ' has opened again. You’re invited back first.', [[{ text: 'Step in', url: SQ_APP + '#go' }]]);
+        if (!(await hQuiet(env, k.uid))) await say(env, k.uid, '✦ The circle on “' + c.topic + '” in ' + HV[c.vibe].name + ' has opened again. You’re invited back first.', [[{ text: 'Step in', url: SQ_APP }]]);
       }
     }
     return apiJson(req, { ok: true, hushed: on });
@@ -2731,7 +2848,7 @@ async function vApi(req, path, env, body, me, r, room, now) {
     const today = await D1.prepare('SELECT COUNT(*) AS n FROM vouches WHERE vid = ?1 AND at > ?2').bind(me, now - 86400000).first();
     if (!core && today && today.n >= 5) return apiJson(req, { ok: false, error: 'Five vouches a day is plenty. Your word matters more when it’s rare.' }, 429);
     await D1.prepare('INSERT OR IGNORE INTO vouches (aid, vid, kind, at) VALUES (?1, ?2, ?3, ?4)').bind(t.uid, me, core ? 'core' : 'member', now).run();
-    await say(env, t.uid, '✦ ' + (r.alias || 'A member') + ' vouched for you. Your place at the gate just got closer.', [[{ text: 'Open the Village', url: SQ_APP + '#go' }]]);
+    await say(env, t.uid, '✦ ' + (r.alias || 'A member') + ' vouched for you. Your place at the gate just got closer.', [[{ text: 'Open the Village', url: SQ_APP }]]);
     await vMaybeReady(env, t.uid);
     return apiJson(req, { ok: true, vouched: true });
   }
@@ -2865,7 +2982,7 @@ async function pgSpend(env, uid, n, why) {
   ]);
   return true;
 }
-async function pgTell(env, uid, text) { if (!(await hQuiet(env, uid))) await say(env, uid, text, [[{ text: 'Open the Wayside', url: SQ_APP + '#go' }]]); }
+async function pgTell(env, uid, text) { if (!(await hQuiet(env, uid))) await say(env, uid, text, [[{ text: 'Open the Wayside', url: SQ_APP }]]); }
 async function pgIntroduced(env, x, y) {
   await pgReady(env);
   return !!(await env.D1.prepare("SELECT 1 AS k FROM pgintro WHERE status IN ('open','met') AND ((uid = ?1 AND to_uid = ?2) OR (uid = ?2 AND to_uid = ?1))").bind(x, y).first());
@@ -2960,6 +3077,7 @@ async function pgApi(req, path, env, body, me, r, room, now) {
     return apiJson(req, { ok: true, fuel: PG_FUEL, core, tokens: await duBal(env, me), mine, arrived: done ? pub(await pgPerson(env, done.target)) : null, asks, coming, meets });
   }
   if (path === '/api/sq/pg/targets') {
+    if (!r.member && !core) return apiJson(req, { ok: true, people: [] });
     const b = pgBfs(await pgGraph(env), me);
     const rows = (await D1.prepare("SELECT uid, pid, alias, room, member FROM people WHERE done = 1 AND stage != 'Declined' AND uid != ?1 ORDER BY (room = ?2) DESC, member DESC, alias LIMIT 200").bind(me, room).all()).results || [];
     const out = rows.filter((x) => b.dist.get(x.uid) !== 1).map((x) => ({ ...pub(x), steps: b.dist.has(x.uid) ? b.dist.get(x.uid) : null }));
@@ -3388,7 +3506,7 @@ async function duApi(req, path, env, body, me, r, room, now) {
   };
   const people = async (ids) => { const u = [...new Set(ids.filter(Boolean))]; const m = new Map(); for (const id of u) { const p = await D1.prepare('SELECT pid, alias, points, member FROM people WHERE uid = ?1').bind(id).first(); if (p) m.set(id, p); } return m; };
   const get = async (id) => await D1.prepare('SELECT * FROM duties WHERE id = ?1').bind(Math.floor(Number(id) || 0)).first();
-  const tell = async (uid, text) => { if (!(await hQuiet(env, uid))) await say(env, uid, text, [[{ text: 'Open the Duty Board', url: SQ_BASE + '#duty' }]]); };
+  const tell = async (uid, text) => { if (!(await hQuiet(env, uid))) await say(env, uid, text, [[{ text: 'Open the Duty Board', url: SQ_APP }]]); };
   if (path === '/api/sq/duty/list') {
     const open = (await D1.prepare("SELECT * FROM duties WHERE status = 'open' AND (room = ?1 OR official = 1) ORDER BY official DESC, at DESC LIMIT 60").bind(room).all()).results || [];
     const mine = (await D1.prepare("SELECT * FROM duties WHERE (by = ?1 OR taker = ?1) AND status IN ('open','taken','done') ORDER BY at DESC LIMIT 40").bind(me).all()).results || [];
@@ -3673,7 +3791,16 @@ onPrivate = async function (m, cmd, env) {
     if (id && String(chat) !== inbox && text) {
       let r = null;
       try { r = await getRec(env, id); } catch (e) {}
-      if (!(r && r.with)) {
+      /* Member-to-member messages relayed through the bot are private between the two members:
+         never copy them to Starlove's inbox or sl_msgs. Mirrors the relay decision in onPrivate.
+         (The old check, r.with, is a field nothing sets, so every relay was being copied.)
+         /forget isn't copied either: it's a deletion request, not a message. */
+      const c = command(text);
+      let relay = false;
+      if (r && r.step === 'chatting' && r.member && !c && !(r.report && r.report.step === 'describe')) {
+        try { relay = !!(await peerFor(env, id, r, m)); } catch (e) { relay = true; }
+      }
+      if (!relay && c !== '/forget') {
         const who = ((r && r.alias) || (m.from.first_name || 'Someone')) + (m.from.username ? ' @' + m.from.username : '');
         await slForward(env, 'Telegram', who, text, 'tg:' + chat);
       }
@@ -3968,6 +4095,9 @@ async function v2Drift(env) {
   }
   await env.D1.batch(rows.map(function (r) { return env.D1.prepare('UPDATE owned SET wx = ?2, wy = ?3 WHERE cid = ?1').bind(r.cid, Math.round(r.wx), Math.round(r.wy)); }));
 }
+/* private media must be a plain base64 image or short video, nothing else
+   (a bare base64 string, e.g. an encrypted photo, is allowed too: it can't break out of an attribute) */
+const V2_MEDIA_OK = /^(data:(image\/(jpeg|png|webp|gif)|video\/(mp4|webm|quicktime));base64,)?[A-Za-z0-9+/]+={0,2}$/;
 async function v2Api(req, path, env, body, user, id, r) {
   await v2Ready(env);
   const me = String(id), p = path.slice('/api/sq/v2/'.length), b = body || {}, now = Date.now();
@@ -3994,6 +4124,15 @@ async function v2Api(req, path, env, body, user, id, r) {
   /* the public record: every line kept; anyone who may see a star may rewind it */
   if (p === 'history') {
     const cid = Number(b.cid) || 0, to = Number(b.to) || now, from = Number(b.from) || (to - 3 * 3600000);
+    /* open circles are public and anyone may scroll back; a hushed (knock-to-join) circle's
+       record is only for the people sitting in it */
+    const circ = await env.D1.prepare('SELECT id, hushed, welcome FROM circles WHERE id = ?1').bind(cid).first();
+    if (!circ) return J({ ok: true, lines: [] });
+    const seated = await env.D1.prepare('SELECT 1 FROM seats WHERE cid = ?1 AND uid = ?2').bind(cid, me).first();
+    if (!seated) {
+      const cnt = await env.D1.prepare('SELECT COUNT(*) AS n FROM seats WHERE cid = ?1').bind(cid).first();
+      if (hHushed(circ, (cnt && cnt.n) || 0)) return J({ ok: false, error: 'This circle is private.' }, 403);
+    }
     const o = await env.D1.prepare('SELECT o.wx, o.wy FROM owned o WHERE o.cid = ?1').bind(cid).first();
     if (o) { const v = v2VillageAt(await v2Villages(env), o.wx, o.wy); if (v && v.name !== room) return J({ ok: false, error: 'Members only.' }, 403); }
     const rows = (await env.D1.prepare('SELECT l.id, l.uid, l.body, l.at, p.alias, p.pid FROM lines l LEFT JOIN people p ON p.uid = l.uid WHERE l.cid = ?1 AND l.at BETWEEN ?2 AND ?3 ORDER BY l.at LIMIT 500').bind(cid, from, to).all()).results || [];
@@ -4045,7 +4184,10 @@ async function v2Api(req, path, env, body, user, id, r) {
     if ((t.y || 0) * 2 > n) status = 'in'; else if ((t.c - (t.y || 0)) * 2 >= n) status = 'declined';
     if (status !== 'open') {
       await env.D1.prepare('UPDATE vapps SET status = ?2 WHERE id = ?1').bind(a.id, status).run();
-      if (status === 'in') { await env.D1.prepare('UPDATE people SET room = ?2 WHERE uid = ?1').bind(a.uid, room).run(); await v2MoveInto(env, a.uid, a); try { await slSend(env, a.uid, '✦ ' + room + ' took you in. Your star now shines there.'); } catch (e) {} }
+      if (status === 'in') {
+        /* the KV record is the source sqSync copies from, so move the room there too, or the next sync puts them back */
+        try { const rec = await getRec(env, a.uid); if (rec) { const was = roomOf(env, rec); if (rec.member) rec.member.room = room; else rec.room = room; await putRec(env, a.uid, rec); if (rec.member && was !== room) { await roomRemove(env, was, a.uid); await roomAdd(env, room, a.uid); } } } catch (e) {}
+        await env.D1.prepare('UPDATE people SET room = ?2 WHERE uid = ?1').bind(a.uid, room).run(); await v2MoveInto(env, a.uid, a); try { await slSend(env, a.uid, '✦ ' + room + ' took you in. Your star now shines there.'); } catch (e) {} }
     }
     return J({ ok: true, status: status });
   }
@@ -4116,10 +4258,15 @@ async function v2Api(req, path, env, body, user, id, r) {
     if (rows.length && b.seen) await env.D1.prepare('UPDATE invites SET seen = 1 WHERE b = ?1').bind(me).run();
     return J({ ok: true, invites: rows });
   }
-  /* private photos: the client encrypts; the server keeps only ciphertext. View-once ones are deleted on first open. */
+  /* private photos: stored as base64 data URLs (not encrypted), visible only to the two people in the pair. View-once ones are blanked on first open; others go with their message after 24 hours unless saved. */
   if (p === 'media/put') {
     const to = await v2ByPid(env, b.pid); if (!to) return J({ ok: false });
     const blob = String(b.blob || ''); if (blob.length > 900000) return J({ ok: false, error: 'That photo is too large.' });
+    /* only real base64 images/videos: anything else could carry script into the other person's app */
+    if (!V2_MEDIA_OK.test(blob)) return J({ ok: false, error: 'That file can’t be sent.' });
+    if (!(await v2CanDm(env, me, String(to.uid)))) return J({ ok: false, error: 'You can only send photos to people you’re talking with.' });
+    const recent = await env.D1.prepare('SELECT COUNT(*) AS n FROM media WHERE uid = ?1 AND at > ?2').bind(me, now - 3600000).first();
+    if (recent && recent.n >= 40) return J({ ok: false, error: 'That’s a lot of photos for one hour. Try again a little later.' });
     const mid = godHex(godRnd(12)), pr = v2Pair(me, to.uid);
     const ext = (await mediaStore(env, mid, blob)) ? 1 : 0;
     await env.D1.prepare('INSERT INTO media (id, a, b, uid, blob, once, at, ext) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)').bind(mid, pr[0], pr[1], me, ext ? '' : blob, b.once ? 1 : 0, now, ext).run();
@@ -4132,6 +4279,8 @@ async function v2Api(req, path, env, body, user, id, r) {
     if (m.once && m.uid === me) return J({ ok: true, sealed: true });
     let blob = m.blob;
     if (m.ext) { blob = await mediaFetch(env, m.id); if (blob === undefined) return J({ ok: false, error: 'Photo storage is hiccuping; try again in a moment.' }, 502); if (blob === null) return J({ ok: true, gone: true }); }
+    /* only ever hand back a plain base64 image/video: anything else could carry script into the viewer's app */
+    if (!V2_MEDIA_OK.test(String(blob || ''))) return J({ ok: true, gone: true });
     if (m.once) { await env.D1.prepare("UPDATE media SET opened = 1, blob = '' WHERE id = ?1").bind(m.id).run(); if (m.ext) await mediaDrop(env, m.id); }
     return J({ ok: true, blob: blob, once: !!m.once });
   }
@@ -4141,10 +4290,19 @@ async function v2Api(req, path, env, body, user, id, r) {
     const m = await env.D1.prepare('SELECT id FROM dms WHERE id = ?1 AND uid = ?2').bind(Number(b.id) || 0, me).first();
     if (!m) return J({ ok: false, error: 'Not your message.' });
     if (p === 'dm/edit') { const body2 = String(b.body || ''); if (!body2 || body2.length > 20000) return J({ ok: false }); await env.D1.prepare('UPDATE dms SET body = ?2 WHERE id = ?1').bind(m.id, body2).run(); await env.D1.prepare('INSERT INTO dmx (id, edited) VALUES (?1, 1) ON CONFLICT(id) DO UPDATE SET edited = 1').bind(m.id).run(); }
-    else { const mid = ((await env.D1.prepare('SELECT substr(body, 4) AS mid FROM dms WHERE id = ?1').bind(m.id).first()) || {}).mid;
-    await env.D1.prepare("UPDATE dms SET body = '' WHERE id = ?1").bind(m.id).run(); await env.D1.prepare('INSERT INTO dmx (id, del) VALUES (?1, 1) ON CONFLICT(id) DO UPDATE SET del = 1').bind(m.id).run();
-    if (mid) { const mx = await env.D1.prepare('SELECT id, ext FROM media WHERE id = ?1 AND uid = ?2').bind(mid, me).first();
-      if (mx) { if (mx.ext) await mediaDrop(env, mx.id); await env.D1.prepare('DELETE FROM media WHERE id = ?1').bind(mx.id).run(); } } }
+    else {
+      /* read the photo id before the body is blanked (it used to be read afterwards, and "|o"/"|v" suffixes never matched, so photos were never deleted) */
+      const old = await env.D1.prepare('SELECT body FROM dms WHERE id = ?1').bind(m.id).first();
+      const mx = /^(?:mx:|img)([0-9a-f]+)(?:\|[a-z]*)?$/.exec(String((old && old.body) || '')) || /^([0-9a-f]{8,})$/.exec(String((old && old.body) || ''));
+      await env.D1.prepare("UPDATE dms SET body = '' WHERE id = ?1").bind(m.id).run();
+      await env.D1.prepare('INSERT INTO dmx (id, del) VALUES (?1, 1) ON CONFLICT(id) DO UPDATE SET del = 1').bind(m.id).run();
+      if (mx) {
+        const md = await env.D1.prepare('SELECT id, ext FROM media WHERE uid = ?1 AND id = ?2').bind(me, mx[1]).first();
+        /* row goes only once the Drive blob is gone or durably queued for retry */
+        const gone = md && md.ext ? await mediaDrop(env, md.id) : true;
+        if (md && gone) await env.D1.prepare('DELETE FROM media WHERE id = ?1').bind(md.id).run();
+      }
+    }
     return J({ ok: true });
   }
   if (p === 'dm/flags') { const ids = (b.ids || []).slice(0, 300).map(Number).filter(isFinite); if (!ids.length) return J({ ok: true, flags: {} }); const live = {}; ((await env.D1.prepare('SELECT id, a, b FROM dms WHERE id IN (' + ids.join(',') + ')').all()).results || []).forEach(function (x) { if (String(x.a) === String(me) || String(x.b) === String(me)) live[x.id] = 1; }); const o = {}; const rows = (await env.D1.prepare('SELECT id, edited, del FROM dmx WHERE id IN (' + ids.join(',') + ')').all()).results || []; rows.forEach(function (x) { if (live[x.id]) { o[x.id] = { edited: !!x.edited, del: !!x.del }; } }); const sv = (await env.D1.prepare('SELECT id, by FROM dm_save WHERE id IN (' + ids.join(',') + ')').all()).results || []; sv.forEach(function (x) { if (live[x.id]) { o[x.id] = o[x.id] || {}; o[x.id].saved = true; o[x.id].saved_by_me = String(x.by) === String(me); } }); ids.forEach(function (x) { if (!o[x] && !live[x]) o[x] = { gone: true }; }); return J({ ok: true, flags: o }); }
@@ -4152,10 +4310,11 @@ async function v2Api(req, path, env, body, user, id, r) {
     const mid = Math.floor(Number(b.id) || 0);
     const m = await env.D1.prepare('SELECT id, a, b FROM dms WHERE id = ?1').bind(mid).first();
     if (!m || (String(m.a) !== String(me) && String(m.b) !== String(me))) return J({ ok: false, error: 'Not found.' }, 404);
-    const cur = await env.D1.prepare('SELECT id FROM dm_save WHERE id = ?1').bind(mid).first();
+    const cur = await env.D1.prepare('SELECT id, by FROM dm_save WHERE id = ?1').bind(mid).first();
+    /* either person in the DM can save or unsave; the saved state is shared, and saved_by_me tells each side who set it */
     if (cur) { await env.D1.prepare('DELETE FROM dm_save WHERE id = ?1').bind(mid).run(); return J({ ok: true, saved: false }); }
     await env.D1.prepare('INSERT INTO dm_save (id, by, at) VALUES (?1, ?2, ?3)').bind(mid, String(me), Date.now()).run();
-    return J({ ok: true, saved: true });
+    return J({ ok: true, saved: true, saved_by_me: true });
   }
   return J({ ok: false, error: 'not found' }, 404);
 }
@@ -4251,7 +4410,7 @@ hApi = async function (req, path, env, body, me, r, room, now) {
         const note = await D1.prepare('SELECT at FROM dmnote WHERE to_uid = ?1 AND from_uid = ?2').bind(t.uid, uid).first();
         if ((!pres || t0 - pres.seen > 120000) && (!note || t0 - note.at > 600000) && !(await hQuiet(env, t.uid))) {
           await D1.prepare('INSERT OR REPLACE INTO dmnote (to_uid, from_uid, at) VALUES (?1, ?2, ?3)').bind(t.uid, uid, t0).run();
-          await say(env, t.uid, '✦ ' + ((r && r.alias) || 'Someone') + ' wrote to you.', [[{ text: 'Open messages', url: SQ_APP + '#dm' }]]);
+          await say(env, t.uid, '✦ ' + ((r && r.alias) || 'Someone') + ' wrote to you.', [[{ text: 'Open messages', url: SQ_BASE + '#dm' }]]);
         }
       } catch (e) {}
       return apiJson(req, { ok: true, id: ins.meta.last_row_id });

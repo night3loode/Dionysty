@@ -17,6 +17,12 @@ db.exec("CREATE TABLE msgs (id INTEGER PRIMARY KEY AUTOINCREMENT, room TEXT, uid
 db.exec("CREATE TABLE sl_msgs (id INTEGER PRIMARY KEY AUTOINCREMENT, at INTEGER, who TEXT, label TEXT, body TEXT)");
 db.exec("CREATE TABLE dms (id INTEGER PRIMARY KEY AUTOINCREMENT, a TEXT, b TEXT, uid TEXT, body TEXT, at INTEGER, seen INTEGER DEFAULT 0)");
 db.exec("INSERT INTO people (uid, pid, alias, member, room) VALUES ('111','p1','Alice',1,'Village 1'),('222','p2','Bob',1,'Village 1')");
+// photos can only go to someone you're bonded or talking with
+db.exec("CREATE TABLE bonds (a TEXT, b TEXT, status TEXT, at INTEGER, PRIMARY KEY (a, b))");
+db.exec("CREATE TABLE blocks (a TEXT, b TEXT, at INTEGER, PRIMARY KEY (a, b))");
+db.exec("CREATE TABLE talks (a TEXT, b TEXT, at INTEGER, PRIMARY KEY (a, b))");
+db.exec("INSERT INTO people (uid, pid, alias, member, room) VALUES ('333','p3','Cat',1,'Village 1')");
+db.exec("INSERT INTO bonds (a, b, status, at) VALUES ('111','222','bonded',0)");
 
 const bridgeCalls = [];
 const bridgeStore = new Map();
@@ -51,6 +57,14 @@ t('blob external, d1 empty', row.ext === 1 && row.blob === '');
 const get = await call('media/get', { id: put.id }, '222');
 t('get roundtrip', get.ok === true && get.blob === 'aGVsbG8tY2lwaGVy' && get.once === false);
 
+// only plain base64 (optionally a data:image/video URL) is accepted, and only to a bond or talk
+const evil = await call('media/put', { pid: 'p2', blob: 'x" onerror="alert(1)', once: 0 }, '111');
+t('script-like blob refused', evil.ok === false);
+const dataUrl = await call('media/put', { pid: 'p2', blob: 'data:image/jpeg;base64,/9j/4AAQ', once: 0 }, '111');
+t('data:image URL accepted', dataUrl.ok === true);
+const stranger = await call('media/put', { pid: 'p3', blob: 'aGVsbG8=', once: 0 }, '111');
+t('no bond or talk refused', stranger.ok === false);
+
 // once: sender sealed, receiver burns + bridge del
 const put2 = await call('media/put', { pid: 'p2', blob: 'b25jZS1ibG9i', once: 1 }, '111');
 const sealed = await call('media/get', { id: put2.id }, '111');
@@ -77,10 +91,12 @@ t('fallback get ok', get3.blob === 'ZmFsbGJhY2s=');
 
 // sweep: old unsaved dm with ext media -> bridge del + row delete
 const old = Date.now() - 2 * 86400000;
-db.prepare("INSERT INTO dms (a, b, uid, body, at) VALUES ('111','222','111',?1,?2)").run('img' + put.id, old);
+db.prepare("INSERT INTO dms (a, b, uid, body, at) VALUES ('111','222','111',?1,?2)").run('mx:' + put.id, old);
 db.prepare("UPDATE media SET at = ?1 WHERE id = ?2").run(old, put.id);
-// ensure cutoff >= RETENTION_START: RETENTION_START constant in worker is 1795619418620 (Nov 24 2026)
-await w.scheduled({}, env, {});
+// the sweep only deletes once now - 24h >= RETENTION_START (1795619418620 = 25 Nov 2026 15:10 UTC),
+// so run it with the clock moved past the grace period, or the test depends on the day it runs
+const realNow = Date.now; Date.now = () => 1795619418620 + 2 * 86400000 + 3600000;
+try { await w.scheduled({}, env, {}); } finally { Date.now = realNow; }
 t('sweep bridge del', bridgeCalls.filter((c) => c.op === 'del' && c.id === 'm_' + put.id).length >= 1);
 t('sweep dms row deleted', db.prepare('SELECT COUNT(*) n FROM dms WHERE id NOT IN (SELECT id FROM dm_save)').get().n === 0);
 
@@ -118,8 +134,8 @@ t('mpurge row cleared after confirm', !db.prepare('SELECT id FROM mpurge WHERE i
 
 // 2) dm/del with bridge del failing: media row gone from D1, blob id queued
 const put5 = await call('media/put', { pid: 'p2', blob: 'ZG1kZWwtcGF5bG9hZA==', once: 0 }, '111');
-db.prepare("INSERT INTO dms (a, b, uid, body, at) VALUES ('111','222','111',?1,?2)").run('img' + put5.id, Date.now());
-const dmsRow = db.prepare("SELECT id FROM dms WHERE body = ?1").get('img' + put5.id);
+db.prepare("INSERT INTO dms (a, b, uid, body, at) VALUES ('111','222','111',?1,?2)").run('mx:' + put5.id, Date.now());
+const dmsRow = db.prepare("SELECT id FROM dms WHERE body = ?1").get('mx:' + put5.id);
 bridgeStore.delete = () => { throw new Error('del boom'); };
 const delRes = await call('dm/del', { id: dmsRow.id }, '111');
 t('dm/del ok despite bridge failure', delRes.ok === true);
@@ -130,10 +146,12 @@ await w.scheduled({}, env, {});
 t('dm/del purge completed on retry', !bridgeStore.has('m_' + put5.id) && !db.prepare('SELECT id FROM mpurge WHERE id = ?1').get(put5.id));
 
 // 3) sweep with bridge del failing: rows deleted, blob id queued, retried to confirm
+// the 24h DM rule only runs once now - 24h is past RETENTION_START, so pin the clock after the grace period (otherwise this test depends on the day it runs)
+const realNow6 = Date.now; Date.now = () => 1795619418620 + 2 * 86400000 + 3600000;
 const put6 = await call('media/put', { pid: 'p2', blob: 'c3dlZXAtcGF5bG9hZA==', once: 0 }, '111');
-db.prepare("INSERT INTO dms (a, b, uid, body, at) VALUES ('111','222','111',?1,?2)").run('img' + put6.id, Date.now());
+db.prepare("INSERT INTO dms (a, b, uid, body, at) VALUES ('111','222','111',?1,?2)").run('mx:' + put6.id, Date.now());
 const old6 = Date.now() - 2 * 86400000;
-db.prepare("UPDATE dms SET at = ?1 WHERE body = ?2").run(old6, 'img' + put6.id);
+db.prepare("UPDATE dms SET at = ?1 WHERE body = ?2").run(old6, 'mx:' + put6.id);
 db.prepare("UPDATE media SET at = ?1 WHERE id = ?2").run(old6, put6.id);
 bridgeStore.delete = () => { throw new Error('del boom'); };
 await w.scheduled({}, env, {});
@@ -142,6 +160,7 @@ t('sweep queued purge', !!db.prepare('SELECT id FROM mpurge WHERE id = ?1').get(
 bridgeStore.delete = origDel;
 await w.scheduled({}, env, {});
 t('sweep purge completed on retry', !bridgeStore.has('m_' + put6.id) && !db.prepare('SELECT id FROM mpurge WHERE id = ?1').get(put6.id));
+Date.now = realNow6;
 
 // 4) notfound counts as physically gone: no mpurge row
 const put7 = await call('media/put', { pid: 'p2', blob: 'Z29uZS1hbHJlYWR5', once: 1 }, '111');
