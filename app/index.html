@@ -878,7 +878,7 @@ function layout(W,H){
  return{s:s,f:f,ox:ox,hc:A.YC*s,hb:(A.H-A.YB)*s,inL:X(A.PL),inR:X(A.PR),titleTop:tt+4}}
 function build(W,H,dpr){var L=layout(W,H);SPR=document.createElement('canvas');SPR.width=Math.round(W*dpr);SPR.height=Math.round(H*dpr);var c=SPR.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);
  c.fillStyle=lg(c,0,H-150,0,H,[0,'rgba(11,6,4,0)',1,'rgba(11,6,4,.85)']);c.fillRect(L.inL,H-150,L.inR-L.inL,150);
- if(L.slim){var y0=(-L.T)/L.s-40,y1=(H-L.T)/L.s+40;slimStroke(c,L,new Path2D('M31 '+y0+' V'+y1+' M678 '+y0+' V'+y1),'M-60 '+y0+'H31V'+y1+'H-60Z M678 '+y0+'H770V'+y1+'H678Z');
+ if(L.slim){var y0=263,y1=(H-L.T)/L.s+40; /* the side borders start where the arch springs, not above it */slimStroke(c,L,new Path2D('M31 '+y0+' V'+y1+' M678 '+y0+' V'+y1),'M-60 '+y0+'H31V'+y1+'H-60Z M678 '+y0+'H770V'+y1+'H678Z');
   c.save();c.beginPath();c.rect(0,0,W,L.hc+30);c.clip();slimStroke(c,L,new Path2D(DA_SLIM_D),DA_SLIM_OUT);c.restore()}
  else{var A=AD,s=L.s,mid=A.XR-A.XL,mw=mid*s*L.f,lw=A.XL*s,rw=(A.W-A.XR)*s,ox=L.ox,top=L.hc*.5,sh=Math.max(0,H-L.hb-top);c.imageSmoothingQuality='high';
   if(sh>0){c.drawImage(IMG,0,A.YC,A.XL,A.YB-A.YC,ox,top,lw,sh+1);c.drawImage(IMG,A.XR,A.YC,A.W-A.XR,A.YB-A.YC,ox+lw+mw,top,rw,sh+1)}
