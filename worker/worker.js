@@ -3864,8 +3864,10 @@ async function mediaFetch(env, id) {
   if (!env.MEDIA_BRIDGE_URL || !env.MEDIA_KEY) return null;
   try {
     const r = await fetch(env.MEDIA_BRIDGE_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ key: env.MEDIA_KEY, op: 'get', id: 'm_' + id }) });
-    const j = await r.json(); return j && j.ok ? String(j.b64 || '') : null;
-  } catch (e) { return null; }
+    const j = await r.json();
+    if (j && j.ok) return String(j.b64 || '');
+    return j && j.error === 'notfound' ? null : undefined;
+  } catch (e) { return undefined; }
 }
 async function mediaDrop(env, id) {
   if (!env.MEDIA_BRIDGE_URL || !env.MEDIA_KEY) return;
@@ -4103,7 +4105,7 @@ async function v2Api(req, path, env, body, user, id, r) {
     if (m.opened) return J({ ok: true, gone: true });
     if (m.once && m.uid === me) return J({ ok: true, sealed: true });
     let blob = m.blob;
-    if (m.ext) { blob = await mediaFetch(env, m.id); if (blob === null) return J({ ok: true, gone: true }); }
+    if (m.ext) { blob = await mediaFetch(env, m.id); if (blob === undefined) return J({ ok: false, error: 'Photo storage is hiccuping; try again in a moment.' }, 502); if (blob === null) return J({ ok: true, gone: true }); }
     if (m.once) { await env.D1.prepare("UPDATE media SET opened = 1, blob = '' WHERE id = ?1").bind(m.id).run(); if (m.ext) await mediaDrop(env, m.id); }
     return J({ ok: true, blob: blob, once: !!m.once });
   }

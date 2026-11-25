@@ -37,10 +37,10 @@ const login = (id) => { const o = { id, first_name: 'A', auth_date: Math.floor(D
   const dcs = Object.keys(o).sort().map((k) => k + '=' + o[k]).join('\n');
   o.hash = crypto.createHmac('sha256', crypto.createHash('sha256').update(env.BOT_TOKEN).digest()).update(dcs).digest('hex'); return o; };
 const call = async (p, body, id) => {
-  const res = await (await import('/tmp/worker-media.mjs')).default.fetch(new Request('https://w/api/sq/v2/' + p, { method: 'POST', body: JSON.stringify({ ...body, login: login(id) }) }), env, {});
+  const res = await (await import('/tmp/worker-media-test.mjs')).default.fetch(new Request('https://w/api/sq/v2/' + p, { method: 'POST', body: JSON.stringify({ ...body, login: login(id) }) }), env, {});
   return res.json();
 };
-const w = (await import('/tmp/worker-media.mjs')).default;
+const w = (await import('/tmp/worker-media-test.mjs')).default;
 const results = []; const t = (n, ok) => results.push([ok ? 'PASS' : 'FAIL', n]);
 
 // put + get round-trip via bridge
@@ -83,6 +83,16 @@ db.prepare("UPDATE media SET at = ?1 WHERE id = ?2").run(old, put.id);
 await w.scheduled({}, env, {});
 t('sweep bridge del', bridgeCalls.filter((c) => c.op === 'del' && c.id === 'm_' + put.id).length >= 1);
 t('sweep dms row deleted', db.prepare('SELECT COUNT(*) n FROM dms WHERE id NOT IN (SELECT id FROM dm_save)').get().n === 0);
+
+// bridge error (not notfound) -> 502 not gone
+bridgeStore.set('m_errcase', 'x');
+db.prepare("INSERT INTO media (id, a, b, uid, blob, once, at, ext) VALUES ('errcase','111','222','111','',0,?1,1)").run(Date.now());
+bridgeCalls.push = new Proxy(bridgeCalls.push, {});
+const origGet = bridgeStore.get.bind(bridgeStore);
+bridgeStore.get = (k) => { throw new Error('boom'); };
+const errRes = await call('media/get', { id: 'errcase' }, '222');
+bridgeStore.get = origGet;
+console.log('ERRRES', JSON.stringify(errRes)); t('bridge error -> 502 not gone', errRes.ok === false && !errRes.gone);
 
 const fails = results.filter((r) => r[0] === 'FAIL');
 for (const r of results) console.log(r[0], r[1]);
