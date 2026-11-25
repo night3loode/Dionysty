@@ -1,0 +1,15 @@
+# Local-only config to run the patched live Worker for tests. Throwaway values; never deploy with this.
+name = "dionysty-bot-localtest"
+main = "worker.js"
+compatibility_date = "2024-11-01"
+[vars]
+BOT_TOKEN = "123:local-test-token"
+WEBHOOK_SECRET = "local_test_secret_value_1234567890"
+TEAM_CHAT_ID = ""
+[[d1_databases]]
+binding = "D1"
+database_name = "localtest"
+database_id = "local-test"
+[[kv_namespaces]]
+binding = "DB"
+id = "localtestkv"

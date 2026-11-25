@@ -1,0 +1,11 @@
+{
+  "name": "dionysty-circles",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22.13" },
+  "scripts": {
+    "test": "node --no-warnings --test tests/*.test.js",
+    "dev": "node --no-warnings scripts/dev-server.js",
+    "e2e": "python3 tests/e2e.py"
+  }
+}

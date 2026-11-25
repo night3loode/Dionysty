@@ -1,0 +1,21 @@
+# Staging Worker for circles on the lab. Separate from the live bot Worker.
+name = "dionysty-circles-lab"
+main = "index.js"
+compatibility_date = "2024-11-01"
+
+[vars]
+CIRCLES_ON = "1"
+# The live Worker's API base, used only to read who you are (sq/v2/me). Same value as the app's API.
+MAIN_API = "https://dionysty-bot.night3loode.workers.dev/api/"
+ALLOWED_ORIGINS = "https://lab.dionysty.pages.dev"
+# Optional: only these pids may use circles (comma separated). Empty means everyone signed in.
+CIRCLES_PIDS = ""
+
+[[d1_databases]]
+binding = "DB"
+database_name = "dionysty-circles-lab"
+database_id = "<FILL IN AFTER: wrangler d1 create dionysty-circles-lab>"
+migrations_dir = "migrations"
+
+[triggers]
+crons = ["*/5 * * * *"]
