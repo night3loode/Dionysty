@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>DIONYSTY · A private village in Delhi NCR</title>
+<meta name="description" content="DIONYSTY is a private village of fifty adults in Delhi NCR, made for meeting people properly: small circles, beautiful homes, music, ideas and play.">
+<meta name="theme-color" content="#1a0c11">
+<meta property="og:title" content="DIONYSTY · The best people you’ve never met">
+<meta property="og:description" content="A private village of fifty in Delhi NCR, made for meeting people properly.">
+<meta property="og:image" content="https://dionysty.pages.dev/assets/v1/hero-desktop-16x9.webp">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Jost:wght@300;400&family=Michroma&display=swap">
+<style>
+:root{--ink:#1a0c11;--umber:#2a1018;--oxblood:#6b2936;--wine:#b9875b;--sand:#c6a36d;--blush:#f2e7d5;--muted:#cdb490;--line:rgba(198,163,109,.2);--line-control:rgba(198,163,109,.55);
+--display:"Cormorant Garamond",Georgia,"Times New Roman",serif;--wide:"Michroma","Arial Black",system-ui,sans-serif;--sans:"Jost",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--ink);color:var(--blush);font-family:var(--sans);font-weight:300;font-size:17px;line-height:1.7;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+a{color:var(--sand)}
+.wrap{max-width:1040px;margin:0 auto;padding:0 22px}
+.eyebrow{font-family:var(--wide);font-size:10px;letter-spacing:.38em;text-transform:uppercase;color:var(--sand)}
+h1,h2,h3{font-family:var(--display);font-weight:300;line-height:1.1;margin:0}
+h2{font-size:clamp(34px,6vw,54px);letter-spacing:.01em}
+h2 em,h1 em{color:var(--sand)}
+p{margin:0 0 14px;color:var(--muted)}
+.wm{display:block;fill:var(--blush)}
+
+/* nav */
+nav{position:sticky;top:0;z-index:20;background:rgba(26,12,17,.82);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+nav .wrap{display:flex;align-items:center;gap:14px;height:62px}
+nav .wm{width:120px}
+nav .grow{flex:1}
+.meet{font-family:var(--wide);font-size:10px;letter-spacing:.28em;text-transform:uppercase;color:var(--sand);border:1px solid var(--sand);border-radius:999px;padding:11px 18px;text-decoration:none;white-space:nowrap}
+.meet:hover{background:var(--sand);color:var(--ink)}
+
+/* hero */
+.hero{position:relative;min-height:min(92vh,820px);display:flex;align-items:flex-end;overflow:hidden;background:radial-gradient(110% 80% at 70% 20%,#481b27 0%,var(--ink) 62%)}
+.hero .art{position:absolute;inset:0;width:100%;height:100%}
+.hero .veil{position:absolute;inset:0;background:linear-gradient(180deg,rgba(26,12,17,0) 35%,rgba(26,12,17,.75) 70%,var(--ink) 100%)}
+.hero .txt{position:relative;z-index:2;padding:0 22px 64px;max-width:1040px;margin:0 auto;width:100%}
+.hero h1{font-size:clamp(46px,9vw,96px);margin:14px 0 10px;max-width:780px}
+.hero .when{font-family:var(--display);font-size:clamp(20px,2.4vw,26px);color:var(--blush);margin:0 0 6px}
+.hero .sub{font-family:var(--wide);font-size:10px;letter-spacing:.32em;text-transform:uppercase;color:var(--muted);margin:0 0 30px}
+.cta{display:inline-flex;align-items:center;gap:10px;background:var(--sand);color:var(--ink);font-family:var(--wide);font-size:11px;letter-spacing:.24em;text-transform:uppercase;padding:16px 26px;border-radius:999px;text-decoration:none;transition:transform .15s,box-shadow .4s}
+.cta:hover{box-shadow:0 0 30px rgba(185,135,91,.55)}
+.cta:active{transform:scale(.98)}
+.cta.ghost{background:transparent;color:var(--sand);border:1px solid var(--line-control);margin-left:10px}
+.cta.ghost:hover{box-shadow:none;border-color:var(--sand)}
+.status{display:inline-flex;align-items:center;gap:10px;margin-top:26px;font-size:13px;color:var(--muted)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--wine);box-shadow:0 0 0 0 rgba(185,135,91,.7);animation:pulse 2.4s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(185,135,91,.6)}70%{box-shadow:0 0 0 12px rgba(185,135,91,0)}100%{box-shadow:0 0 0 0 rgba(185,135,91,0)}}
+
+/* frieze divider */
+.frieze{--h:clamp(64px,7vw,120px);height:var(--h);background:url(/assets/frieze-1.webp) repeat-x 0 0/auto 100%;border-block:1px solid var(--line);box-shadow:inset 0 14px 22px -12px rgba(0,0,0,.75),inset 0 -14px 22px -12px rgba(0,0,0,.75);filter:brightness(.88) saturate(.95);animation:procession 160s linear infinite;margin:0}
+.frieze.alt{background-image:url(/assets/frieze-2.webp);animation:procession2 160s linear infinite reverse}
+@keyframes procession{to{background-position:calc(var(--h) * -12.5) 0}}
+@keyframes procession2{to{background-position:calc(var(--h) * -12.6316) 0}}
+.navfrieze{height:clamp(18px,2.2vw,28px);background:url(/assets/frieze-1.webp) repeat-x center 0/auto 100%;border-top:1px solid var(--line);filter:brightness(.85)}
+.pr li{overflow:hidden}
+.pr .niche{float:left;width:60px;height:auto;margin:2px 18px 4px 0;border-radius:4px;filter:drop-shadow(0 6px 14px rgba(0,0,0,.6))}
+
+section{padding:88px 0}
+.lede{font-family:var(--display);font-size:clamp(24px,3.2vw,34px);line-height:1.35;color:var(--blush);max-width:760px;margin:18px 0 26px}
+.lede em{color:var(--sand)}
+.two{display:grid;grid-template-columns:1fr;gap:28px}
+@media(min-width:820px){.two{grid-template-columns:1.1fr .9fr;gap:56px;align-items:start}}
+
+/* facts */
+.facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.fact{background:var(--ink);padding:18px 18px 16px}
+.fact .k{font-family:var(--wide);font-size:9px;letter-spacing:.24em;text-transform:uppercase;color:var(--sand)}
+.fact .v{font-family:var(--display);font-size:22px;color:var(--blush);line-height:1.25;margin-top:6px}
+.fact .v small{display:block;font-family:var(--sans);font-size:13px;color:var(--muted);margin-top:3px}
+
+/* arc */
+.arc{margin-top:34px;display:grid;gap:14px}
+@media(min-width:820px){.arc{grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}}
+.night{border:1px solid var(--line);border-radius:14px;padding:22px 20px;background:rgba(42,16,24,.55);position:relative;overflow:hidden}
+.night .day{font-family:var(--wide);font-size:10px;letter-spacing:.3em;color:var(--wine);text-transform:uppercase}
+.night h3{font-size:28px;margin:8px 0 12px;color:var(--blush)}
+.night ul{list-style:none;margin:0;padding:0}
+.night li{display:grid;grid-template-columns:78px 1fr;gap:10px;padding:9px 0;border-top:1px solid var(--line);font-size:15px;color:var(--muted)}
+.night li b{font-family:var(--wide);font-weight:400;font-size:10px;letter-spacing:.16em;color:var(--sand);padding-top:5px}
+.night li span em{font-family:var(--display);font-style:italic;font-size:17px;color:var(--blush)}
+
+/* vibes */
+.vibes{margin-top:34px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media(min-width:820px){.vibes{grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}}
+.vibe{border:1px solid var(--line);border-radius:14px;padding:20px 18px;background:rgba(42,16,24,.45);transition:border-color .4s,background .4s}
+.vibe:hover{border-color:var(--line-control);background:rgba(107,41,54,.35)}
+.vibe svg{width:30px;height:30px;fill:none;stroke:var(--sand);stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.vibe h3{font-size:24px;margin:12px 0 4px;color:var(--blush)}
+.vibe p{font-size:14px;margin:0;line-height:1.5}
+
+/* steps */
+.steps{list-style:none;padding:0;margin:30px 0 0;counter-reset:s;display:grid;gap:0}
+.steps li{counter-increment:s;display:grid;grid-template-columns:52px 1fr;gap:14px;padding:18px 0;border-top:1px solid var(--line)}
+.steps li:last-child{border-bottom:1px solid var(--line)}
+.steps li::before{content:counter(s,upper-roman);font-family:var(--wide);font-size:11px;letter-spacing:.2em;color:var(--wine);padding-top:8px}
+.steps h3{font-size:24px;color:var(--blush);margin-bottom:4px}
+.steps p{margin:0;font-size:15px}
+
+/* care */
+.care{border:1px solid var(--line-strong,rgba(198,163,109,.45));border-radius:18px;padding:28px 24px;background:linear-gradient(160deg,rgba(107,41,54,.45),rgba(26,12,17,.9))}
+.care ul{margin:14px 0 0;padding:0;list-style:none;display:grid;gap:10px}
+.care li{padding-left:22px;position:relative;color:var(--muted);font-size:15px}
+.care li::before{content:"";position:absolute;left:0;top:11px;width:8px;height:1px;background:var(--sand)}
+
+/* soon */
+.soon{text-align:center}
+.soon .lede{margin-left:auto;margin-right:auto}
+.soon .tags{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:22px 0 32px}
+.soon .tags span{border:1px dashed var(--line-control);border-radius:999px;padding:8px 16px;font-size:13px;color:var(--muted)}
+
+footer{border-top:1px solid var(--line);padding:46px 0 60px;text-align:center}
+footer .wm{width:150px;margin:0 auto 14px}
+footer p{font-family:var(--wide);font-size:9px;letter-spacing:.3em;text-transform:uppercase;color:var(--muted);margin:6px 0}
+footer .art{font-family:var(--sans);text-transform:none;letter-spacing:0;font-size:12px;opacity:.75}
+
+.reveal{opacity:0;transform:translateY(10px);transition:opacity 1.1s ease,transform 1.1s ease}
+.reveal.in{opacity:1;transform:none}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}.reveal{opacity:1;transform:none}}
+@media(max-width:560px){.cta.ghost{margin:12px 0 0}.hero .txt{padding-bottom:48px}section{padding:64px 0}}
+
+/* home */
+.links{display:none;gap:4px;align-items:center}
+@media(min-width:760px){.links{display:flex}}
+.ib{width:42px;height:42px;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;color:var(--muted);transition:color .2s,background .2s}
+.ib:hover{color:var(--sand);background:rgba(198,163,109,.08)}
+.ib svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.home .hero h1{font-size:clamp(48px,9.5vw,112px)}
+.rot{display:inline-block;font-style:italic;color:var(--sand);transition:opacity .7s ease,filter .7s ease,transform .7s ease}
+.rot.out{opacity:0;filter:blur(6px);transform:translateY(6px)}
+.pills{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}
+.pills span{border:1px solid var(--line-control);border-radius:999px;padding:8px 16px;font-size:13px;color:var(--muted)}
+.trio{display:grid;gap:12px;margin-top:6px}
+.trio div{border-top:1px solid var(--line);padding:16px 0 4px}
+.trio b{display:block;font-family:var(--display);font-weight:400;font-size:26px;color:var(--blush)}
+.trio span{font-size:15px;color:var(--muted)}
+.temples{margin-top:34px;display:grid;grid-template-columns:1fr;gap:12px}
+@media(min-width:620px){.temples{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(min-width:960px){.temples{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.tp{border:1px solid var(--line);border-radius:14px;padding:20px 18px;background:rgba(42,16,24,.45)}
+.tp .n{font-family:var(--wide);font-size:10px;letter-spacing:.22em;color:var(--wine);text-transform:uppercase}
+.tp h3{font-size:25px;margin:10px 0 2px;color:var(--blush)}
+.tp h3 em{color:var(--sand)}
+.tp p{margin:4px 0 0;font-size:14px;line-height:1.5}
+.tp.note{background:transparent;border-style:dashed;display:flex;align-items:center}
+.tp.note p{font-size:14px}
+.band{border:1px solid rgba(198,163,109,.45);border-radius:18px;overflow:hidden;display:grid;background:linear-gradient(160deg,rgba(107,41,54,.5),rgba(26,12,17,.92))}
+@media(min-width:820px){.band{grid-template-columns:1.2fr 1fr}}
+.band .txt{padding:34px 28px}
+.band h2{font-size:clamp(34px,5vw,50px);margin:10px 0 12px}
+.band .when{font-family:var(--display);font-size:22px;color:var(--blush);margin:0 0 16px}
+.band svg{width:100%;height:100%;min-height:220px;display:block}
+.pr{list-style:none;padding:0;margin:28px 0 0;display:grid;gap:0}
+@media(min-width:820px){.pr{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:48px}}
+.pr li{border-top:1px solid var(--line);padding:16px 0}
+.pr b{display:flex;gap:12px;align-items:baseline;font-family:var(--display);font-weight:400;font-size:24px;color:var(--blush)}
+.pr b i{font-style:normal;font-family:var(--wide);font-size:10px;letter-spacing:.2em;color:var(--wine);min-width:30px}
+.pr span{display:block;font-size:15px;color:var(--muted);margin-top:4px}
+.qa{margin-top:26px;border-top:1px solid var(--line)}
+.qa details{border-bottom:1px solid var(--line)}
+.qa summary{cursor:pointer;list-style:none;padding:18px 34px 18px 0;position:relative;font-family:var(--display);font-size:23px;color:var(--blush)}
+.qa summary::-webkit-details-marker{display:none}
+.qa summary::after{content:"";position:absolute;right:6px;top:50%;width:10px;height:10px;border-right:1.5px solid var(--sand);border-bottom:1.5px solid var(--sand);transform:translateY(-70%) rotate(45deg);transition:transform .3s}
+.qa details[open] summary::after{transform:translateY(-30%) rotate(-135deg)}
+.qa .a{padding:0 0 18px;color:var(--muted);font-size:15px;max-width:760px}
+.qa .a p{margin:0 0 10px}
+.decl{margin-top:30px;border:1px dashed var(--line-control);border-radius:14px;padding:22px 22px 8px}
+.decl p{font-family:var(--display);font-style:italic;font-size:20px;color:var(--blush);line-height:1.5}
+.small{font-size:13px;color:var(--muted)}
+
+/* hero v2: temple cards */
+nav .wm{width:150px;height:auto;stroke:var(--blush);stroke-width:6;stroke-linejoin:round}
+footer .wm{height:auto;stroke:var(--blush);stroke-width:4;stroke-linejoin:round}
+.home2{min-height:0;display:block;padding:56px 0 40px}
+.home2 .txt{padding:0 22px;position:relative;z-index:2}
+.home2 h1{font-size:clamp(44px,7.5vw,92px);margin:14px 0 12px}
+.home2 .when{max-width:640px}
+.deck{position:relative;z-index:2;display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding:0 22px;padding:22px 22px 8px;max-width:1084px;margin:0 auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.deck::-webkit-scrollbar{display:none}
+.deck{-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 18px,#000 calc(100% - 70px),transparent);mask-image:linear-gradient(90deg,transparent 0,#000 18px,#000 calc(100% - 70px),transparent)}
+.tc{flex:0 0 min(78vw,300px);scroll-snap-align:start;position:relative;height:420px;border:1px solid rgba(198,163,109,.4);border-radius:18px;overflow:hidden;text-decoration:none;color:var(--blush);background:radial-gradient(120% 80% at 50% 30%,rgba(185,135,91,.42),rgba(107,41,54,.35) 45%,#1f0d14 80%);display:flex;flex-direction:column;justify-content:flex-end;padding:20px;transition:transform .4s ease,border-color .4s}
+.tc:hover{border-color:var(--sand);transform:translateY(-3px)}
+.tc img{position:absolute;left:50%;top:18px;height:290px;width:auto;transform:translateX(-50%);filter:drop-shadow(0 18px 26px rgba(0,0,0,.65))}
+.tc::after{content:"";position:absolute;inset:auto 0 0 0;height:58%;background:linear-gradient(180deg,rgba(26,12,17,0),rgba(26,12,17,.92) 55%);pointer-events:none}
+.tc span{position:relative;z-index:1}
+.tc .tn{font-family:var(--wide);font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--wine)}
+.tc .tm{font-family:var(--display);font-size:28px;line-height:1.15;margin:6px 0 4px}
+.tc .tm em{color:var(--sand)}
+.tc .tl{font-size:14px;color:var(--muted)}
+.dots{display:flex;gap:7px;justify-content:center;margin:14px 0 6px;position:relative;z-index:2}
+.dots i{width:6px;height:6px;border-radius:50%;background:var(--line-control);transition:background .3s,transform .3s}
+.dots i.on{background:var(--sand);transform:scale(1.3)}
+.home2 .after{margin-top:14px}
+.home2 .after .small{max-width:620px;margin:0 0 22px}
+@media(max-width:560px){.home2{padding-top:36px}.tc{height:400px}.tc img{height:270px}}
+
+/* v7 · visual system foundation */
+.ico{fill:none;stroke:currentColor;stroke-width:18;stroke-linecap:round;stroke-linejoin:round;display:block}
+.ib svg.ico{width:22px;height:22px;stroke-width:24}
+.photo{padding-top:0!important;background:var(--ink)}
+.photo .ph{position:absolute;left:0;right:0;top:0;height:min(100svh,980px);z-index:0;display:block}
+.photo .ph img{width:100%;height:100%;object-fit:cover;object-position:center 42%;display:block}
+.photo .pveil{position:absolute;left:0;right:0;top:0;height:min(100svh,980px);z-index:1;pointer-events:none;background:radial-gradient(42% 34% at 50% 42%,rgba(26,12,17,.6),rgba(26,12,17,0) 72%),linear-gradient(180deg,rgba(26,12,17,.45) 0%,rgba(26,12,17,0) 20%,rgba(26,12,17,.15) 52%,rgba(26,12,17,.9) 84%,var(--ink) 100%)}
+.photo .doorway{min-height:min(72svh,700px);display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding-top:36px}
+.photo .doorway h1{text-shadow:0 2px 34px rgba(0,0,0,.8)}
+.photo .doorway .when{margin-left:auto;margin-right:auto;max-width:520px;text-shadow:0 1px 18px rgba(0,0,0,.9)}
+.photo .doorway .eyebrow{text-shadow:0 1px 10px #000}
+.tc{border-radius:48% 48% 16px 16px/24% 24% 16px 16px;border-color:rgba(198,163,109,.5);background:radial-gradient(120% 80% at 50% 30%,rgba(107,41,54,.78),rgba(72,27,39,.6) 45%,#1f0d14 82%)}
+.tc::before{content:"";position:absolute;inset:8px;border:1px solid rgba(198,163,109,.28);border-radius:inherit;pointer-events:none;z-index:1}
+.tc img{top:34px}
+.tc .ti{position:relative;z-index:1;width:30px;height:30px;margin-bottom:10px;color:var(--sand);stroke-width:20}
+.trio div{display:grid;grid-template-columns:42px 1fr;column-gap:14px}
+.trio i.tri{grid-row:1/3;width:36px;height:36px;color:var(--sand);margin-top:4px}
+.trio i.tri .ico{width:36px;height:36px;stroke-width:16}
+.trio b,.trio span{grid-column:2}
+.band .archfig{position:relative;margin:26px auto;width:min(76%,300px);aspect-ratio:3/4;align-self:center;min-height:0}
+.band .archfig img{position:absolute;left:10.5%;right:10.5%;top:10.75%;bottom:2.5%;width:79%;height:86.75%;object-fit:cover;object-position:center 30%;border-radius:50% 50% 0 0/38.6% 38.6% 0 0}
+.band .archfig .archsvg{position:absolute;inset:0;width:100%;height:100%;min-height:0}
+.care .sig7{width:118px;height:118px;display:block;margin:0 auto 14px;fill:none}
+.pr .med{float:left;width:58px;height:70px;margin:2px 18px 6px 0;color:var(--sand);border:1px solid rgba(198,163,109,.45);border-radius:50% 50% 6px 6px/40% 40% 6px 6px;background:radial-gradient(circle at 50% 42%,rgba(107,41,54,.65),rgba(26,12,17,.7));display:flex;align-items:center;justify-content:center;box-shadow:inset 0 0 0 4px rgba(26,12,17,.6),inset 0 0 0 5px rgba(198,163,109,.22)}
+.pr .med .ico{width:30px;height:30px;stroke-width:20}
+.torana{display:block;width:min(72%,380px);height:auto;margin:0 auto 36px;fill:none}
+#club,#charter{position:relative;isolation:isolate}
+#club::before,#charter::before{content:"";position:absolute;inset:0;z-index:-1;background:url(/assets/v1/svg/lotus-repeat.svg) 0 0/240px;opacity:.07;-webkit-mask-image:linear-gradient(180deg,transparent,#000 18%,#000 82%,transparent);mask-image:linear-gradient(180deg,transparent,#000 18%,#000 82%,transparent)}
+footer{background:url(/assets/v1/svg/burgundy-line-texture.svg) 0 0/400px}
+footer .lt{width:46px;height:46px;margin:0 auto 14px;color:var(--sand);stroke-width:12}
+@media(max-width:560px){.photo .doorway{min-height:68svh}.photo .doorway h1{font-size:44px}}
+
+/* v8 · lights, silk and vine */
+.photo .diyas{position:absolute;left:0;right:0;top:0;height:min(100svh,980px);z-index:1;pointer-events:none;background:url(/assets/v1/legacy/diyas.webp) center 34%/min(1180px,150%) auto no-repeat;mix-blend-mode:screen;opacity:.7;animation:diya 9s ease-in-out infinite alternate}
+@keyframes diya{from{opacity:.5;transform:translateY(0)}to{opacity:.85;transform:translateY(-12px)}}
+.band{position:relative;isolation:isolate}
+.band::before{content:"";position:absolute;inset:0;z-index:-1;background:url(/assets/v1/legacy/silk.webp) center/cover;opacity:.2;mix-blend-mode:screen;filter:blur(1.5px) saturate(.9)}
+.band .vine{display:block;width:150px;height:auto;margin:-6px 0 8px -6px;opacity:.85}
+.care .sig7{background:url(/assets/v1/legacy/glow.webp) center/330% auto no-repeat}
+.decl .vined{display:block;width:min(100%,360px);height:auto;margin:0 0 12px;opacity:.85}
+</style>
+<style id="sky-css">
+:root{--ink:#0b0604;--umber:#1a0f09}
+body{background:radial-gradient(120% 70% at 50% 0%,#1d110a 0%,#120a06 55%,#0b0604 100%) fixed}
+nav{background:rgba(11,6,4,.82)}
+#sky{position:fixed;inset:0;width:100%;height:100%;z-index:5;pointer-events:none;mix-blend-mode:screen}
+section,footer{position:relative}
+.hero.home2{background:#0b0604;min-height:0}
+.hero.home2 .ph,.hero.home2 .pveil,.hero.home2 .diyas{display:none}
+#hero-sky{position:absolute;left:0;top:0;width:100%;height:100%;z-index:0;display:block;pointer-events:none}
+.hero.home2 .doorway{position:relative;z-index:2;padding-top:clamp(120px,22vw,250px);min-height:0}
+.hero.home2 .doorway h1{text-shadow:0 2px 30px #0b0604,0 0 60px rgba(11,6,4,.9)}
+.hero.home2 .doorway .when{text-shadow:0 1px 16px #0b0604}
+.hero.home2 .deck{padding-left:max(30px,4vw);padding-right:max(30px,4vw);padding-bottom:70px}
+.tc .cs{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+@media print{#sky,#hero-sky{display:none}}
+</style></head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="wm" viewBox="96 86 3220 392"><path fill-rule="evenodd" d="M1067.0,470.6C1081.4,468.7 1106.6,463.1 1120.8,458.5C1134.1,454.2 1158.9,441.8 1172.7,432.7C1193.4,418.9 1218.1,395.2 1231.8,376.1C1247.0,354.8 1262.8,323.0 1267.5,304.1C1268.3,301.1 1269.4,297.5 1269.9,296.1C1271.4,292.2 1274.0,267.0 1274.0,256.6C1273.9,247.2 1271.0,223.0 1268.9,215.0C1261.2,185.5 1246.6,161.1 1222.8,138.5C1202.2,119.0 1173.1,103.6 1141.1,95.5C1127.8,92.2 1114.4,90.8 1088.0,90.3C1069.4,90.0 1062.4,90.2 1048.0,92.0C1020.5,95.2 1005.8,98.9 983.5,108.2C933.9,128.8 897.0,155.5 856.0,200.5C829.5,229.5 802.1,267.2 768.0,321.5C737.1,370.7 713.5,401.4 690.1,422.5C675.3,436.0 664.3,444.1 653.2,449.8C638.3,457.5 633.3,459.2 622.7,459.7C614.0,460.2 612.2,460.0 606.8,457.9C599.3,455.0 591.9,448.5 589.1,442.5C582.4,428.2 584.5,405.6 595.2,376.0C599.9,363.1 615.7,326.4 626.4,303.7C628.9,298.4 634.3,286.2 638.4,276.7C642.5,267.3 647.7,255.4 650.0,250.5C652.3,245.6 655.5,238.3 657.0,234.5C659.9,227.3 663.8,218.7 677.8,188.0C689.4,162.4 693.8,151.1 701.4,126.5C706.4,110.1 707.4,101.4 704.4,98.9C703.1,97.8 694.9,97.5 665.1,97.3C644.4,97.1 626.9,97.4 626.2,97.8C624.3,99.0 625.6,101.1 629.9,104.3C639.3,110.9 641.4,123.5 636.0,141.5C632.6,153.1 620.3,188.3 606.5,226.0C601.2,240.6 596.3,254.3 595.5,256.5C594.8,258.7 591.6,267.5 588.5,276.0C585.4,284.5 579.8,300.7 576.0,312.0C572.3,323.3 568.0,335.6 566.6,339.3C557.8,362.1 551.0,393.1 550.8,410.6C550.5,446.3 568.5,468.5 599.5,470.7C615.5,471.8 645.3,464.0 664.1,453.8C684.9,442.4 705.0,425.6 729.1,399.4C765.1,360.4 785.8,333.8 824.2,277.5C864.4,218.6 880.0,198.9 909.7,169.9C932.9,147.3 944.4,138.3 969.0,123.8C987.1,113.2 995.0,109.9 1017.1,103.7C1038.9,97.6 1046.4,96.5 1067.5,96.6C1089.1,96.7 1103.6,98.7 1120.0,104.0C1130.9,107.6 1152.4,117.8 1162.0,124.0C1182.8,137.5 1201.3,156.8 1214.8,179.0C1219.0,186.0 1227.0,203.5 1227.0,206.0C1227.1,206.8 1227.8,209.3 1228.6,211.5C1229.4,213.7 1231.2,221.1 1232.7,228.0C1235.1,239.1 1235.4,242.8 1235.4,260.5C1235.5,284.2 1233.5,297.5 1225.8,323.5C1221.5,338.4 1209.5,362.5 1198.0,379.6C1169.1,422.4 1119.2,453.5 1067.0,461.4C1051.6,463.8 1024.4,463.5 1007.7,461.0C972.3,455.5 944.9,442.8 916.5,418.8C892.5,398.6 878.2,376.7 870.5,348.5C868.1,339.7 867.8,337.4 868.3,328.8C868.8,321.0 868.6,318.8 867.4,317.6C866.6,316.8 865.3,316.3 864.5,316.6C863.3,317.1 863.0,319.2 863.0,325.9C863.0,330.6 863.4,336.0 864.0,337.9C864.5,339.8 865.6,345.3 866.5,350.2C868.2,360.2 872.6,371.8 880.1,385.8C897.3,418.2 920.0,440.1 952.5,455.5C968.8,463.2 989.4,469.3 1005.0,471.0C1017.2,472.3 1055.1,472.1 1067.0,470.6ZM2344.3,467.0C2393.9,463.4 2432.8,439.9 2452.0,402.0C2457.2,391.8 2459.2,383.2 2459.7,369.0C2460.1,356.6 2460.0,354.8 2457.6,346.6C2453.2,331.6 2445.4,320.0 2431.3,307.4C2411.5,289.8 2388.4,278.1 2323.0,252.4C2283.0,236.8 2264.3,226.6 2251.5,213.6C2231.8,193.6 2227.4,164.1 2240.3,139.5C2242.2,135.8 2246.6,130.4 2251.5,125.5C2266.5,110.7 2284.2,102.5 2309.0,99.0C2325.4,96.6 2331.4,96.6 2346.7,98.5C2367.4,101.2 2391.4,110.4 2407.5,121.8C2423.4,133.0 2432.7,144.3 2437.0,157.5C2439.7,165.9 2441.7,170.0 2443.0,170.0C2444.2,170.0 2444.4,119.1 2443.2,117.3C2440.9,113.7 2412.2,102.3 2393.0,97.4C2375.5,92.9 2360.8,91.7 2331.0,92.3C2311.5,92.7 2305.9,93.1 2298.0,94.9C2272.3,100.9 2253.8,110.7 2235.6,128.0C2225.9,137.2 2220.5,144.8 2214.5,157.1C2208.8,168.9 2207.5,176.2 2208.3,193.1C2208.9,204.9 2209.2,206.4 2212.7,214.6C2219.6,230.6 2228.7,241.9 2243.3,252.8C2261.1,266.1 2272.9,271.9 2317.0,289.2C2384.5,315.6 2411.7,331.9 2424.0,353.5C2427.6,359.8 2432.0,376.7 2432.0,384.3C2432.0,391.9 2427.9,407.3 2423.4,416.5C2417.2,429.2 2402.4,443.4 2387.3,450.9C2372.3,458.4 2356.7,461.9 2335.5,462.6C2317.7,463.3 2302.7,461.1 2286.5,455.7C2264.5,448.2 2252.0,440.4 2232.5,421.9C2218.4,408.3 2210.1,395.6 2204.6,378.6C2202.1,371.0 2200.1,367.0 2198.8,367.0C2198.3,367.0 2198.0,381.3 2198.0,398.8C2198.0,422.7 2198.3,431.0 2199.2,432.2C2200.5,433.9 2201.4,434.3 2231.5,445.9C2263.4,458.1 2269.2,460.0 2288.5,463.6C2300.4,465.9 2310.2,466.9 2327.5,467.8C2329.2,467.9 2336.7,467.5 2344.3,467.0ZM1670.5,464.0C1671.0,463.2 1672.0,253.3 1672.0,140.4L1672.0,116.2L1675.2,111.4C1677.0,108.7 1680.8,105.0 1683.5,103.3C1686.2,101.5 1688.6,99.6 1688.8,99.1C1689.2,98.0 1655.4,96.8 1651.0,97.8L1647.5,98.6L1653.0,102.9C1659.9,108.2 1663.5,112.9 1665.5,119.0C1666.9,123.3 1667.1,135.2 1666.9,228.1C1666.7,285.5 1666.4,349.6 1666.1,370.5C1665.5,408.2 1665.5,408.5 1663.4,408.8C1661.9,409.0 1660.7,408.2 1659.3,405.8C1658.2,404.0 1651.2,395.4 1643.8,386.8C1636.3,378.2 1621.4,360.7 1610.7,347.8C1599.9,335.0 1586.7,319.3 1581.3,312.9C1575.9,306.6 1562.0,289.7 1550.4,275.4C1538.8,261.2 1520.1,238.4 1508.9,224.9C1497.7,211.4 1479.9,189.8 1469.3,176.9C1433.8,133.5 1409.9,104.5 1406.7,100.9L1403.5,97.2L1381.0,97.5C1368.6,97.7 1357.9,97.9 1357.2,97.9C1354.9,98.1 1356.9,99.9 1364.1,104.0C1371.1,108.2 1377.3,114.7 1381.0,121.9C1382.7,125.3 1382.8,132.7 1382.6,281.5L1382.5,437.5L1380.1,442.7C1378.8,445.6 1375.6,449.9 1372.9,452.5C1367.4,457.6 1367.0,458.7 1370.2,459.5C1372.0,459.9 1402.7,459.6 1403.8,459.1C1404.9,458.6 1403.3,456.1 1399.7,453.0C1392.8,446.9 1390.0,440.6 1388.9,429.2C1388.0,418.3 1387.9,155.7 1388.9,144.0C1389.4,137.4 1389.8,136.5 1391.5,136.2C1393.1,136.0 1395.0,137.8 1399.2,143.3C1405.2,151.2 1439.2,192.7 1451.9,207.5C1456.1,212.4 1465.6,223.9 1473.0,232.9C1480.4,242.0 1490.6,254.1 1495.5,259.9C1500.5,265.8 1512.6,280.4 1522.4,292.5C1532.2,304.6 1547.5,323.1 1556.4,333.5C1565.3,343.9 1574.5,355.0 1577.0,358.0C1579.4,361.0 1587.1,370.0 1594.0,378.0C1600.9,386.0 1610.4,397.2 1615.2,403.0C1620.0,408.8 1629.8,420.5 1637.0,429.0C1644.2,437.5 1653.2,448.1 1656.8,452.5C1667.6,465.3 1669.0,466.5 1670.5,464.0ZM288.0,459.5C300.3,457.9 319.3,453.5 331.6,449.5C335.8,448.1 339.7,447.0 340.2,447.0C342.5,447.0 370.2,432.8 376.9,428.2C394.0,416.5 413.1,397.2 425.1,379.8C438.0,361.0 450.3,330.1 453.0,310.0C455.8,289.0 456.1,279.2 454.5,261.7C451.8,232.9 447.6,218.1 436.2,196.6C426.8,178.9 420.2,169.4 408.8,157.5C387.2,134.9 367.1,122.0 335.0,110.3C324.4,106.4 300.0,100.0 295.8,100.0C294.3,100.0 290.5,99.3 287.3,98.5C282.4,97.2 268.8,97.0 195.8,97.0C101.2,97.0 103.7,96.8 115.8,102.9C122.9,106.5 128.5,112.4 130.2,118.2C131.1,121.6 131.4,155.0 131.1,276.0C130.9,427.9 130.7,437.0 127.6,444.5C125.9,448.4 119.9,453.7 114.2,456.1C104.3,460.4 104.4,460.4 208.0,460.8C264.9,461.0 278.4,460.8 288.0,459.5ZM1972.7,458.3C1972.9,457.7 1971.0,455.7 1968.5,453.9C1965.4,451.7 1963.1,448.9 1961.2,445.1L1958.5,439.5L1957.8,396.5C1957.4,372.9 1957.4,338.6 1957.7,320.3L1958.3,287.1L1964.6,278.3C1971.3,268.8 2013.0,205.4 2034.8,171.5C2054.0,141.5 2062.8,128.4 2067.9,122.2C2073.1,115.8 2081.8,109.1 2090.5,105.0C2096.8,102.0 2099.8,99.5 2098.6,98.3C2097.5,97.2 2046.3,96.7 2045.6,97.8C2045.3,98.4 2047.2,100.7 2049.9,102.9C2056.5,108.5 2058.9,114.3 2057.1,120.9C2055.3,127.7 2036.6,157.3 1980.1,242.7C1972.1,254.8 1963.2,268.6 1960.4,273.2C1954.8,282.2 1952.2,283.9 1949.7,279.8C1948.9,278.5 1943.1,269.4 1936.8,259.5C1930.5,249.6 1922.5,236.7 1919.2,230.9C1912.9,219.9 1908.1,212.1 1891.5,186.0C1876.0,161.6 1867.2,148.2 1860.9,139.3C1853.4,128.9 1851.0,123.8 1851.0,117.5C1851.0,111.1 1853.2,107.1 1859.4,102.4C1863.0,99.6 1863.9,98.5 1862.8,97.9C1860.7,96.7 1787.0,97.3 1786.8,98.5C1786.8,99.0 1790.2,101.4 1794.6,103.8C1798.9,106.1 1804.0,109.5 1805.8,111.3C1809.9,115.2 1827.3,140.8 1840.4,162.3C1845.7,171.1 1852.6,182.1 1855.7,186.8C1858.8,191.6 1866.0,203.2 1871.8,212.5C1877.6,221.8 1888.6,239.2 1896.3,251.0C1904.0,262.8 1913.2,277.6 1916.8,283.8L1923.2,295.1L1923.7,358.3C1924.2,425.2 1923.7,437.8 1920.1,444.7C1918.2,448.6 1914.0,452.8 1909.1,456.1C1903.6,459.7 1906.8,460.0 1940.2,459.8C1963.4,459.6 1972.4,459.2 1972.7,458.3ZM2771.6,458.5C2771.8,457.9 2769.5,456.0 2766.5,454.2C2759.7,450.1 2756.7,445.1 2754.5,434.5C2753.1,427.3 2753.0,409.7 2753.2,267.8L2753.5,109.0L2756.3,106.3L2759.1,103.5L2787.8,103.6C2819.4,103.6 2828.4,104.6 2843.7,109.9C2858.3,114.9 2870.0,125.3 2875.3,138.1C2878.1,145.0 2879.7,147.6 2880.4,146.9C2880.8,146.6 2881.2,135.9 2881.5,123.2C2882.0,100.3 2882.0,100.1 2879.8,98.6C2877.9,97.2 2861.4,97.0 2734.4,97.0C2612.4,97.0 2591.1,97.2 2590.1,98.4C2588.5,100.4 2589.1,150.2 2590.7,150.7C2592.1,151.2 2593.9,148.4 2597.6,140.0C2606.2,120.2 2616.3,112.0 2638.1,107.2C2649.3,104.6 2671.9,103.0 2694.8,103.0C2709.8,103.0 2711.8,103.2 2714.8,105.0C2721.5,109.1 2721.1,97.6 2720.8,274.8C2720.5,426.6 2720.4,435.8 2718.7,440.8C2716.5,447.3 2711.0,453.1 2704.6,455.5C2702.1,456.5 2700.0,457.9 2700.0,458.6C2700.0,459.8 2705.9,460.0 2735.7,459.8C2758.3,459.6 2771.4,459.1 2771.6,458.5ZM3185.7,458.3C3185.9,457.7 3184.4,456.6 3182.4,456.0C3177.3,454.3 3169.5,446.4 3168.0,441.5C3167.0,438.5 3166.6,418.3 3166.3,362.5C3165.9,291.5 3166.0,287.4 3167.7,284.9C3168.7,283.4 3174.1,275.7 3179.7,267.7C3185.4,259.7 3195.4,244.7 3202.1,234.3C3208.8,224.0 3222.4,203.0 3232.4,187.8C3242.4,172.6 3255.8,151.8 3262.3,141.6C3276.4,119.5 3282.8,112.9 3296.7,105.7C3310.9,98.4 3310.8,98.0 3293.9,97.8C3277.2,97.6 3256.7,98.0 3256.1,98.6C3255.9,98.8 3257.5,100.9 3259.7,103.3C3264.5,108.5 3266.4,113.7 3265.7,119.6C3265.2,124.5 3261.9,130.2 3243.7,158.5C3237.6,167.8 3226.7,184.7 3219.4,196.0C3201.1,224.4 3166.0,277.0 3162.9,280.8C3161.6,282.4 3158.4,280.8 3157.5,277.9C3157.1,276.8 3153.1,270.3 3148.5,263.5C3143.9,256.7 3137.2,246.0 3133.4,239.8C3129.7,233.6 3120.3,218.8 3112.5,207.0C3104.7,195.2 3094.7,179.7 3090.3,172.5C3078.5,153.4 3072.0,143.2 3066.3,134.8C3060.0,125.6 3058.0,121.0 3058.0,115.8C3058.0,110.7 3060.0,107.0 3065.1,102.7C3067.7,100.6 3069.0,98.8 3068.5,98.1C3068.0,97.1 3059.8,96.9 3035.0,97.1C3017.0,97.2 3000.3,97.6 2997.9,98.0L2993.5,98.6L3001.9,102.9C3006.5,105.2 3012.7,109.5 3015.7,112.3C3021.3,117.6 3022.6,119.5 3040.7,150.0C3046.8,160.2 3058.0,178.0 3065.6,189.7C3080.5,212.4 3084.9,219.3 3095.5,236.5C3099.3,242.6 3108.7,257.2 3116.5,269.0C3124.4,280.8 3131.2,291.4 3131.7,292.5C3133.1,295.2 3134.1,390.4 3133.1,418.0C3132.5,435.0 3131.9,440.4 3130.5,443.8C3128.5,448.6 3122.3,454.4 3117.4,456.0C3115.5,456.7 3114.0,457.8 3114.0,458.6C3114.0,459.8 3119.0,460.0 3149.7,459.8C3175.5,459.6 3185.4,459.2 3185.7,458.3ZM182.8,455.0C177.1,454.0 172.5,451.0 170.4,446.8C169.4,444.8 168.6,439.0 168.0,429.2C166.7,408.1 166.7,112.0 167.9,108.7C169.9,103.5 170.5,103.5 212.5,103.7C233.9,103.8 255.3,104.3 260.0,104.9C284.9,107.8 299.8,111.8 318.2,120.3C347.0,133.8 376.6,159.8 391.2,184.5C407.1,211.5 412.0,227.2 417.0,267.5C420.3,293.8 414.9,331.4 404.0,357.4C398.2,371.4 394.1,379.1 387.2,389.5C366.0,421.6 332.0,444.7 294.5,452.6C281.6,455.3 281.3,455.3 234.5,455.6C208.6,455.7 185.4,455.5 182.8,455.0Z"/></symbol></svg>
+
+<nav aria-label="Main">
+  <div class="wrap">
+    <a href="/" aria-label="DIONYSTY home"><svg class="wm" viewBox="0 0 3220 392" role="img" aria-label="DIONYSTY"><use href="#wm"/></svg></a>
+    <span class="grow"></span>
+    <div class="links">
+      <a class="ib" href="#club" aria-label="The club" title="The club"><svg class="ico" viewBox="0 0 400 400" aria-hidden="true"><circle cx="200" cy="125" r="42"/><circle cx="105" cy="175" r="30"/><circle cx="295" cy="175" r="30"/><path d="M115 330V275Q115 205 200 205Q285 205 285 275V330Z"/><path d="M45 320V270Q45 220 105 220M355 320V270Q355 220 295 220"/></svg></a>
+      <a class="ib" href="#meet" aria-label="The temples" title="The temples"><svg class="ico" viewBox="0 0 400 400" aria-hidden="true"><path d="M65 330V190L200 75L335 190V330Z"/><path d="M115 330V220H285V330"/><path d="M165 330V245H235V330"/></svg></a>
+      <a class="ib" href="/house/" aria-label="The First House" title="The First House"><svg class="ico" viewBox="0 0 400 400" aria-hidden="true"><path d="M75 330V175L200 75L325 175V330"/><path d="M120 330V220H280V330"/><path d="M170 220V330M230 220V330"/></svg></a>
+      <a class="ib" href="#membership" aria-label="Membership" title="Membership"><svg class="ico" viewBox="0 0 400 400" aria-hidden="true"><circle cx="200" cy="130" r="65"/><path d="M75 340Q75 225 200 225Q325 225 325 340Z"/></svg></a>
+      <a class="ib" href="#charter" aria-label="The Charter" title="The Charter"><svg class="ico" viewBox="0 0 400 400" aria-hidden="true"><path d="M105 100H295V340H105Z"/><path d="M145 165H255M145 215H255M145 265H225"/><path d="M245 285L270 310L320 245"/></svg></a>
+      <a class="ib" href="#safeguards" aria-label="Safeguards" title="Safeguards"><svg class="ico" viewBox="0 0 400 400" aria-hidden="true"><rect x="105" y="175" width="190" height="145" rx="16"/><path d="M145 175V135Q145 75 200 75Q255 75 255 135V175"/><circle cx="200" cy="235" r="17"/><path d="M200 252V280"/></svg></a>
+      <a class="ib" href="#questions" aria-label="Questions" title="Questions"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.7"/><path d="M12 17h.01"/></svg></a>
+    </div>
+    <a class="meet" href="/app/#meet">Meet</a>
+  </div>
+  <div class="navfrieze" aria-hidden="true"></div>
+</nav>
+
+<header class="hero home2 photo" id="meet">
+<picture class="ph" aria-hidden="true"><source media="(max-width:640px)" srcset="/assets/v1/hero-mobile-4x5.webp"><source media="(max-width:1100px)" srcset="/assets/v1/hero-tablet-4x3.webp"><img src="/assets/v1/hero-desktop-16x9.webp" alt="" fetchpriority="high" width="1672" height="940"></picture><div class="pveil" aria-hidden="true"></div><div class="diyas" aria-hidden="true"></div>
+  
+  <div class="txt doorway">
+<div class="eyebrow">A private, invitation-only club · Delhi NCR</div>
+    <h1>The best people you’ve never <em>met.</em></h1>
+    <p class="when">There are people you’d love to know and things you’d love to try that your usual life might never bring your way. We thought it would be fun to change that, one small gathering at a time.</p>
+  </div>
+  <div class="deck" id="deck" aria-label="The seven temples">
+    <a class="tc" href="/app/#meet"><img src="/assets/niche-7.webp" alt="" loading="eager" width="204" height="543"><svg class="ico ti" viewBox="0 0 400 400" aria-hidden="true"><path d="M105 290L270 125L320 175L155 340Z"/><path d="M95 350L155 340L105 290Z"/><path d="M270 125L295 100Q315 80 335 100Q355 120 335 140L320 175"/></svg><span class="tn">I · The Artists</span><span class="tm">The <em>Artists</em></span><span class="tl">People who make things, and people who love being around them.</span></a>
+    <a class="tc" href="/app/#meet"><img src="/assets/niche-6.webp" alt="" loading="lazy" width="204" height="543"><svg class="ico ti" viewBox="0 0 400 400" aria-hidden="true"><path d="M70 115Q140 85 200 125V330Q135 290 70 320Z"/><path d="M330 115Q260 85 200 125V330Q265 290 330 320Z"/><path d="M200 125V330"/></svg><span class="tn">II · The Thinkers</span><span class="tm">The <em>Thinkers</em></span><span class="tl">Questions that deserve another cup of coffee.</span></a>
+    <a class="tc" href="/app/#meet"><img src="/assets/niche-2.webp" alt="" loading="lazy" width="204" height="543"><svg class="ico ti" viewBox="0 0 400 400" aria-hidden="true"><path d="M200 345C105 285 80 220 200 75C320 220 295 285 200 345Z"/><path d="M200 345V160"/><path d="M145 245Q200 205 255 245"/></svg><span class="tn">III · The Healers</span><span class="tm">The <em>Healers</em></span><span class="tl">People who notice when someone needs a little kindness.</span></a>
+    <a class="tc" href="/app/#meet"><img src="/assets/niche-4.webp" alt="" loading="lazy" width="204" height="543"><svg class="ico ti" viewBox="0 0 400 400" aria-hidden="true"><path d="M200 330C90 250 75 155 140 125C175 110 195 135 200 155C205 135 225 110 260 125C325 155 310 250 200 330Z"/></svg><span class="tn">IV · The Lovers</span><span class="tm">The <em>Lovers</em></span><span class="tl">Honest connection, in whatever form it finds you.</span></a>
+    <a class="tc" href="/app/#meet"><img src="/assets/niche-3.webp" alt="" loading="lazy" width="204" height="543"><svg class="ico ti" viewBox="0 0 400 400" aria-hidden="true"><circle cx="200" cy="190" r="100"/><path d="M100 190H300M200 90Q140 190 200 290Q260 190 200 90Z"/><path d="M75 335L160 270L215 310L325 215"/></svg><span class="tn">V · The Wanderers</span><span class="tm">The <em>Wanderers</em></span><span class="tl">For the "should we just go?" people.</span></a>
+    <a class="tc" href="/app/#meet"><img src="/assets/niche-5.webp" alt="" loading="lazy" width="204" height="543"><svg class="ico ti" viewBox="0 0 400 400" aria-hidden="true"><path d="M200 80C130 150 130 215 200 245C270 215 270 150 200 80Z"/><path d="M200 245V345"/><path d="M145 300Q200 270 255 300"/><circle cx="145" cy="135" r="13"/><circle cx="255" cy="135" r="13"/></svg><span class="tn">VI · The Revellers</span><span class="tm">The <em>Revellers</em></span><span class="tl">Music, dancing, and stories that begin after dinner.</span></a>
+    <a class="tc" href="/app/#meet"><img src="/assets/niche-1.webp" alt="" loading="lazy" width="204" height="543"><svg class="ico ti" viewBox="0 0 400 400" aria-hidden="true"><path d="M70 330V180L200 85L330 180V330Z"/><path d="M145 330V225H255V330"/><path d="M70 180H330"/><path d="M120 145V95H165V115"/></svg><span class="tn">VII · The Builders</span><span class="tm">The <em>Builders</em></span><span class="tl">The people who like to make ideas real.</span></a>
+  </div>
+  <div class="dots" id="dots" aria-hidden="true"><i class="on"></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  <div class="txt after">
+    <p class="small">Some of us come for the conversations. Some for the art, the dancing, the adventure. Some hope to find love. Most of us are a bit of everything. We call these interests our seven Temples. Pick what draws you in. It helps us introduce you to the right people, and you can change your mind whenever you like. A little of everything? That’s quite alright. These aren’t boxes. They’re conversation starters.</p>
+    <a class="cta" href="/app/#meet">✦ Come say hello</a><a class="cta ghost" href="/house/">The First House · 4–6 Dec</a>
+  </div>
+</header>
+
+<div class="frieze" aria-hidden="true"></div>
+
+<section id="club">
+  <div class="wrap two">
+    <div class="reveal">
+      <div class="eyebrow">The village</div>
+      <h2>Your circle could use a few more <em>circles.</em></h2>
+      <p class="lede">You know the people you know. And they’re wonderful. But there are whole worlds of interesting people your life simply hasn’t put in front of you yet.</p>
+      <p>That’s why we’re building Dionysty. A private village of up to fifty people who get together in beautiful homes, over food, music, ideas, games and whatever else sounds like a good time.</p><p>The lovely part? You see people again. That’s when strangers start becoming your people.</p>
+      <div class="pills"><span>Good people</span><span>Small gatherings</span><span>New experiences</span><span>Discretion, always</span></div>
+    </div>
+    <div class="trio reveal">
+      <div><i class="tri"><svg class="ico" viewBox="0 0 400 400" aria-hidden="true"><path d="M75 330V175L200 75L325 175V330"/><path d="M120 330V220H280V330"/><path d="M170 220V330M230 220V330"/></svg></i><b>50, at most</b><span>A village small enough for people to actually get to know one another.</span></div>
+      <div><i class="tri"><svg class="ico" viewBox="0 0 400 400" aria-hidden="true"><circle cx="200" cy="125" r="42"/><circle cx="105" cy="175" r="30"/><circle cx="295" cy="175" r="30"/><path d="M115 330V275Q115 205 200 205Q285 205 285 275V330Z"/><path d="M45 320V270Q45 220 105 220M355 320V270Q355 220 295 220"/></svg></i><b>Thoughtfully hosted</b><span>Small circles, good introductions, and room to be yourself.</span></div>
+      <div><i class="tri"><svg class="ico" viewBox="0 0 400 400" aria-hidden="true"><path d="M200 320C145 275 128 220 200 115C272 220 255 275 200 320Z"/><path d="M200 320C115 305 65 255 78 195C145 208 184 253 200 320Z"/><path d="M200 320C285 305 335 255 322 195C255 208 216 253 200 320Z"/><path d="M200 320V95M115 355H285"/></svg></i><b>More than once</b><span>Not a crowd that disappears when the evening ends.</span></div>
+    </div>
+  </div>
+</section>
+
+<section id="house" style="padding-top:0">
+  <div class="wrap">
+    <div class="band reveal">
+      <div class="txt">
+        <img class="vine" src="/assets/v1/legacy/grapevine.webp" alt="" aria-hidden="true" width="274" height="123"><div class="eyebrow">Our first gathering</div>
+        <h2>Let’s start with a <em>weekend.</em></h2>
+        <p class="when">Friday 4 to Sunday 6 December 2026</p>
+        <p>Two nights. One beautiful home. No more than fifty people.</p><p>Come on Friday evening, settle into good food, live music, small circles and conversations you don’t have to rush. Stay until Sunday brunch. Head home with people you’re already looking forward to seeing again.</p><p>The address goes only to confirmed guests, close to the date.</p>
+        <p style="margin-top:20px"><a class="cta" href="/house/">See the weekend</a></p>
+      </div>
+      <figure class="archfig" aria-hidden="true"><img src="/assets/v1/hero-mobile-4x5.webp" alt="" loading="lazy" width="752" height="941"><svg class="archsvg" viewBox="0 0 400 400" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="ag" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#C6A36D"/><stop offset=".55" stop-color="#8E6B43"/><stop offset="1" stop-color="#C6A36D"/></linearGradient></defs><path d="M24 390V174C24 74 101 22 200 22S376 74 376 174V390" fill="none" stroke="url(#ag)" stroke-width="4" vector-effect="non-scaling-stroke"/><path d="M42 390V177C42 91 109 43 200 43S358 91 358 177V390" fill="none" stroke="#8E6B43" stroke-width="1.2" vector-effect="non-scaling-stroke"/><path d="M12 390H388" stroke="#C6A36D" stroke-width="2" vector-effect="non-scaling-stroke"/></svg></figure>
+    </div>
+  </div>
+</section>
+
+<div class="frieze alt" aria-hidden="true"></div>
+
+<section id="membership">
+  <div class="wrap two">
+    <div class="reveal">
+      <div class="eyebrow">Membership</div>
+      <h2>So, how does someone <em>get in?</em></h2><p class="lede" style="font-size:clamp(18px,2.2vw,22px)">We start with a conversation. We take the rest seriously because everyone in the room deserves to feel they belong there.</p>
+      <ol class="steps">
+        <li><div><h3>Say hello to Starlove.</h3><p>Start a private Telegram chat. Choose an alias, what you’d like to explore, how you’d come, and add a member code if someone invited you. No long form.</p></div></li>
+        <li><div><h3>Let’s have a call.</h3><p>Ten minutes over video. Tell us about yourself. Ask anything about the people, the privacy, the rules or the cost.</p></div></li>
+        <li><div><h3>The village has a say.</h3><p>Current members vote privately. More yes than no, with a majority taking part, means you’re in. A member’s vouch counts as a yes.</p></div></li>
+        <li><div><h3>Your Sigil lights up.</h3><p>Agree to our Charter, enter the private member space, and get your door pass. You’ll have a say in who joins next.</p></div></li>
+        <li><div><h3>Come to a House.</h3><p>We’ll invite you to your first gathering. The private address arrives close to the date, and a host will welcome you in.</p></div></li>
+      </ol>
+      <p><b>A small thing to know.</b> For now, men join through an existing member’s vouch. Women, non-binary people and couples can say hello directly.</p>
+      <p class="lede" style="margin-top:22px;font-size:clamp(18px,2.2vw,22px)">Sounds like your sort of people?</p><p style="margin-top:12px"><a class="cta" href="/app/#meet">✦ Begin with Starlove</a></p><p class="small">Your conversation is private. Your membership is never public.</p>
+    </div>
+    <aside class="care reveal">
+      <svg class="sig7" viewBox="0 0 400 400" aria-hidden="true"><polygon points="200,24 239,142 363,142 263,215 301,333 200,260 99,333 137,215 37,142 161,142" stroke="#C6A36D" stroke-width="5" stroke-linejoin="round"/><circle cx="200" cy="190" r="38" stroke="#8E6B43" stroke-width="3"/><path d="M200 158L210 182L236 184L216 201L222 227L200 213L178 227L184 201L164 184L190 182Z" stroke="#C6A36D" stroke-width="2.5"/></svg><div class="eyebrow">Your Sigil</div>
+      <h3 style="font-size:30px;margin-top:10px">A little symbol that’s entirely yours.</h3>
+      <p style="margin-top:12px">When you apply, you place ten points across the seven Temples. Together, they make your seven-pointed Sigil, a quiet way of showing what you’re drawn to.</p>
+      <p>It starts unlit while your application is considered. Once you’re welcomed in, it lights up. Inside the village, your alias and Sigil are how people know you. Your real name doesn’t become part of anyone’s public story.</p>
+    </aside>
+  </div>
+</section>
+
+<section id="charter" style="padding-top:0">
+<div class="wrap">
+<svg class="torana" viewBox="0 0 400 130" aria-hidden="true"><path d="M12 100H105Q125 100 140 75Q170 24 200 24Q230 24 260 75Q275 100 295 100H388" stroke="#C6A36D" stroke-width="2.2"/><path d="M24 114H120Q140 114 156 89Q178 55 200 55Q222 55 244 89Q260 114 280 114H376" stroke="#8E6B43" stroke-width="1.4"/><path d="M200 24V8M190 18L200 8L210 18" stroke="#C6A36D" stroke-width="1.6"/><path d="M200 57C183 72 183 87 200 99C217 87 217 72 200 57Z" stroke="#C6A36D" stroke-width="1.6"/><circle cx="140" cy="75" r="3.5" fill="#C6A36D" stroke="none"/><circle cx="260" cy="75" r="3.5" fill="#C6A36D" stroke="none"/></svg>
+    <div class="reveal">
+      <div class="eyebrow">The Charter</div>
+      <h2>Good company comes with good <em>boundaries.</em></h2>
+      <p class="lede" style="font-size:clamp(20px,2.6vw,26px)">We want everyone here to feel safe enough to be themselves. So the rules are simple, serious, and the same for members, founders, hosts and guests.</p>
+    </div>
+    <ul class="pr">
+      <li class="reveal"><span class="med"><svg class="ico" viewBox="0 0 400 400" aria-hidden="true"><path d="M200 345S85 275 85 175C85 105 175 95 200 155C225 95 315 105 315 175C315 275 200 345 200 345Z"/><path d="M200 155V260"/></svg></span><b><i>I</i>Consent</b><span>Ask before touch. A yes can always become a no. Silence, hesitation or intoxication is not consent.</span></li>
+      <li class="reveal"><span class="med"><svg class="ico" viewBox="0 0 400 400" aria-hidden="true"><path d="M200 345C105 280 95 190 120 115Q200 55 280 115C305 190 295 280 200 345Z"/><path d="M155 210L190 245L255 165"/></svg></span><b><i>II</i>Respect</b><span>No harassment, discrimination, intimidation or retaliation. Every person deserves dignity.</span></li>
+      <li class="reveal"><span class="med"><svg class="ico" viewBox="0 0 400 400" aria-hidden="true"><path d="M200 345C115 275 95 195 125 125Q200 70 275 125C305 195 285 275 200 345Z"/><path d="M200 145V250"/><circle cx="200" cy="285" r="7"/></svg></span><b><i>III</i>Discretion</b><span>No public names, gossip, photos or screenshots. What people share stays private, except where safety or law requires otherwise.</span></li>
+      <li class="reveal"><span class="med"><svg class="ico" viewBox="0 0 400 400" aria-hidden="true"><path d="M95 200Q95 115 180 115H220Q305 115 305 200Q305 285 220 285H180Q95 285 95 200Z"/><path d="M135 200H265M235 170L265 200L235 230M165 170L135 200L165 230"/></svg></span><b><i>IV</i>Reciprocity</b><span>Bring consideration and generosity. Nobody owes anyone attention, company or intimacy.</span></li>
+      <li class="reveal"><span class="med"><svg class="ico" viewBox="0 0 400 400" aria-hidden="true"><path d="M200 345V180M200 180L90 90M200 180L310 90"/><path d="M90 90L95 165M90 90L165 95M310 90L305 165M310 90L235 95"/></svg></span><b><i>V</i>Openness</b><span>Different people and ideas are welcome. Curiosity is never an excuse to pressure or shame anyone.</span></li>
+      <li class="reveal"><span class="med"><svg class="ico" viewBox="0 0 400 400" aria-hidden="true"><path d="M105 100H295V340H105Z"/><path d="M145 165H255M145 215H255M145 265H225"/><path d="M245 285L270 310L320 245"/></svg></span><b><i>VI</i>Accountability</b><span>Concerns are heard privately and reviewed fairly. Hosts intervene when safety is at risk.</span></li>
+      <li class="reveal"><span class="med"><svg class="ico" viewBox="0 0 400 400" aria-hidden="true"><circle cx="200" cy="200" r="125"/><path d="M200 75V325M75 200H325"/></svg></span><b><i>VII</i>Autonomy</b><span>Every choice is yours. No required loyalty, disclosure, spending, exclusivity or participation. You can leave at any time.</span></li>
+      <li class="reveal"><span class="med"><svg class="ico" viewBox="0 0 400 400" aria-hidden="true"><circle cx="200" cy="200" r="135"/><path d="M125 245L275 155M135 155L265 245"/><text x="200" y="215" text-anchor="middle" font-size="65" fill="currentColor" stroke="none" font-family="Georgia">18+</text></svg></span><b><i>18+</i>Adults only</b><span>18+. Government ID is checked in person before the first gathering. No ID copies or numbers are kept.</span></li>
+    </ul>
+    <div class="two" style="margin-top:34px">
+      <div class="care reveal">
+        <div class="eyebrow">At a House</div>
+        <ul>
+          <li>Phones stay out of gathering spaces. No one takes photographs, including hosts.</li>
+          <li>Every activity is optional.</li>
+          <li>We don’t pressure anyone to drink, spend, disclose, or do anything intimate.</li>
+        </ul>
+      </div>
+      <div class="reveal">
+        <h3 style="font-size:28px;color:var(--blush)">If something goes wrong</h3>
+        <p style="margin-top:10px">Tell a host or founder privately, or a separate trusted contact if your concern involves a founder. Concerns are handled discreetly, with a fair review and immediate steps when needed. Consent violations end membership; retaliation is never accepted.</p>
+        <div class="decl"><img class="vined" src="/assets/v1/legacy/vine-divider.webp" alt="" aria-hidden="true" width="824" height="80">
+          <div class="eyebrow">The membership declaration</div>
+          <p>I am 18 or older. I have read this Charter and had the chance to ask questions about it. I choose freely to join, and I will respect the consent, boundaries, dignity and privacy of every person in DIONYSTY. I understand that I may decline anything, raise a concern, or leave, at any time, without punishment.</p>
+          <p class="small" style="font-family:var(--sans);font-style:normal;font-size:13px">Agreed in writing before admission.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="frieze" aria-hidden="true"></div>
+
+<section id="safeguards">
+  <div class="wrap">
+    <div class="reveal">
+      <div class="eyebrow">Safeguards</div>
+      <h2>The practical things matter, <em>too.</em></h2><p class="lede" style="font-size:clamp(18px,2.2vw,22px)">You should be able to ask the awkward questions before you step into a room. Here are some answers, in plain English.</p>
+    </div>
+    <div class="qa reveal">
+      <details><summary>Are members adults?</summary><div class="a"><p>Everyone must be at least 18. A government ID is shown in person before attending a first House. We record only that the check happened, not an ID copy or number. Anyone under 18 is turned away.</p></div></details>
+      <details><summary>Who's responsible for safety?</summary><div class="a"><p>There are named hosts at every gathering, including a sober host who is awake and reachable. They can step in when consent or safety is at risk. There's also a separate trusted contact for concerns about a founder. We document action as appropriate. A serious consent breach ends membership.</p></div></details>
+      <details><summary>How does payment work?</summary><div class="a"><p>The contribution is the same regardless of gender, and you'll know it before committing. It covers things like the venue, food, artists and staff. Nobody is paid for anyone's company or intimacy, and sexual services are never bought or sold here.</p></div></details>
+      <details><summary>What about alcohol and substances?</summary><div class="a"><p>Alcohol is served only where the venue and required permissions allow it. There are no unlicensed sales and no illegal drugs. Nobody is pressured to drink. Hosts step in when someone is too intoxicated to give consent.</p></div></details>
+      <details><summary>Where are the gatherings?</summary><div class="a"><p>We meet in private venues and homes with the owner's knowledge of what's taking place. The exact address is shared only with confirmed guests, close to the gathering.</p></div></details>
+      <details><summary>Can anyone take photos?</summary><div class="a"><p>No. Phones are put away on arrival and nobody, including founders or hosts, photographs people in gathering spaces. We never publish members' names, faces or attendance. Website imagery is illustration, not member or event photography.</p></div></details>
+      <details><summary>What information do you keep?</summary><div class="a"><p>Only what's needed to run membership: your alias, Telegram ID or handle, optional Reddit handle, gender and how you'd attend, Temples and Sigil, member or vouch code, call time, application status, short answers and messages. Members voting see your alias, Temples, two answers, how you're attending, and who vouched, but not your Telegram ID or private messages. Votes remain anonymous. Members can message by alias through the bot; relay messages aren't retained unless part of a safety report. We don't ask for sexual orientation, health details, intimate preferences or ID numbers. Information is protected and deleted when you leave, are declined, or request it. You can use /forget in the bot.</p></div></details>
+      <details><summary>What if authorities need information?</summary><div class="a"><p>We cooperate with lawful requests and do not obstruct investigations. Privacy does not mean covering up harm. Age checks, consent processes and appropriate incident records support accountability.</p></div></details>
+    </div>
+  </div>
+</section>
+
+<section id="questions" style="padding-top:0">
+<div class="wrap">
+<svg class="torana" viewBox="0 0 400 130" aria-hidden="true"><path d="M12 100H105Q125 100 140 75Q170 24 200 24Q230 24 260 75Q275 100 295 100H388" stroke="#C6A36D" stroke-width="2.2"/><path d="M24 114H120Q140 114 156 89Q178 55 200 55Q222 55 244 89Q260 114 280 114H376" stroke="#8E6B43" stroke-width="1.4"/><path d="M200 24V8M190 18L200 8L210 18" stroke="#C6A36D" stroke-width="1.6"/><path d="M200 57C183 72 183 87 200 99C217 87 217 72 200 57Z" stroke="#C6A36D" stroke-width="1.6"/><circle cx="140" cy="75" r="3.5" fill="#C6A36D" stroke="none"/><circle cx="260" cy="75" r="3.5" fill="#C6A36D" stroke="none"/></svg>
+    <div class="reveal">
+      <div class="eyebrow">Questions</div>
+      <h2>You might be <em>wondering…</em></h2><p class="lede" style="font-size:clamp(18px,2.2vw,22px)">We probably would be, too.</p>
+    </div>
+    <div class="qa reveal">
+      <details><summary>What actually happens at a House?</summary><div class="a"><p>Music, sometimes a live artist, good food, games, long conversations, and people worth meeting. Hosts make introductions and help small groups settle in. The First House is a Friday-to-Sunday weekend.</p></div></details>
+      <details><summary>Do I have to join every activity?</summary><div class="a"><p>Of course not. Sit something out. Spend an hour talking. Come for the music, the art, the ideas or simply the company. Everything is voluntary.</p></div></details>
+      <details><summary>Is this a dating thing?</summary><div class="a"><p>It isn't a dating app or a matchmaking service. You meet people in groups and get to know them over time. Connections of all kinds can happen, but nothing is promised or expected.</p></div></details>
+      <details><summary>Why do you use Telegram?</summary><div class="a"><p>You apply on our website and use Telegram to talk privately with Starlove, get call details and invitations, and message another member through their alias. Your phone number and handle aren't shown to other members. Your Sigil, member card and door pass live in the app.</p></div></details>
+      <details><summary>Will anyone know I'm a member?</summary><div class="a"><p>We do not publish members' names, faces, attendance or personal details. There are no public member galleries. Inside the club, discretion is part of the Charter: people don't share one another's identity or private conversations.</p></div></details>
+      <details><summary>How much does it cost?</summary><div class="a"><p>We'll tell you the contribution for a House before you commit, and we'll happily discuss costs on your call. There are no surprises at the door.</p></div></details>
+      <details><summary>What if something doesn't feel right?</summary><div class="a"><p>Tell a host or founder privately at any time. If your concern is about a founder, there's a separate trusted contact. We review concerns discreetly and take action where needed. You won't be punished for speaking up.</p></div></details>
+      <details><summary>Can I leave?</summary><div class="a"><p>Anytime, without an explanation. You don't owe the club loyalty, exclusivity or a goodbye speech. Ask us to remove your information, or use /forget in the bot.</p></div></details>
+    </div>
+    <p class="lede" style="margin-top:34px;text-align:center">If this sounds like your kind of room, we’d love to meet you.</p><p style="text-align:center">No grand introduction needed. Just come say hello. We’ll take it from there.</p><p style="margin-top:20px;text-align:center"><a class="cta" href="/app/#meet">✦ Begin with Starlove</a></p>
+  </div>
+</section>
+
+<footer>
+<svg class="ico lt" viewBox="0 0 400 400" aria-hidden="true"><path d="M200 320C145 275 128 220 200 115C272 220 255 275 200 320Z"/><path d="M200 320C115 305 65 255 78 195C145 208 184 253 200 320Z"/><path d="M200 320C285 305 335 255 322 195C255 208 216 253 200 320Z"/><path d="M200 320V95M115 355H285"/></svg>
+<svg class="wm" viewBox="0 0 3220 392" role="img" aria-label="DIONYSTY"><use href="#wm"/></svg>
+  <p>A private village · Delhi NCR</p>
+  <p>Private by invitation. Thoughtful by design. Discretion, always.</p>
+  <p class="art">All artwork is illustrative. No members or actual gatherings are pictured.</p>
+</footer>
+
+<script>
+(function(){var els=document.querySelectorAll('.reveal');
+if('IntersectionObserver' in window){var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}})},{threshold:.1});els.forEach(function(e){io.observe(e)});}else{els.forEach(function(e){e.classList.add('in')});}
+var w=['loving','fun','smart','magnetic','kind','creative','bold'],i=0,r=document.getElementById('rot');
+if(r&&!matchMedia('(prefers-reduced-motion: reduce)').matches){setInterval(function(){r.classList.add('out');setTimeout(function(){i=(i+1)%w.length;r.textContent=w[i];r.classList.remove('out');},700);},2600);}
+})();
+</script>
+<script>
+(function(){var d=document.getElementById('deck'),dots=document.querySelectorAll('#dots i');if(!d)return;
+var cards=d.querySelectorAll('.tc'),i=0,hold=false,t;
+function at(){var x=d.scrollLeft,b=0,bd=1e9;cards.forEach(function(c,k){var dd=Math.abs(c.offsetLeft-22-x);if(dd<bd){bd=dd;b=k}});return b}
+function mark(k){dots.forEach(function(e,j){e.classList.toggle('on',j===k)})}
+d.addEventListener('scroll',function(){mark(at())},{passive:true});
+['pointerdown','touchstart','mouseenter','focusin'].forEach(function(ev){d.addEventListener(ev,function(){hold=true;clearTimeout(t);t=setTimeout(function(){hold=false},6000)},{passive:true})});
+var rm=matchMedia('(prefers-reduced-motion: reduce)').matches;
+setInterval(function(){if(hold||document.hidden)return;var k=(at()+1)%cards.length;var max=d.scrollWidth-d.clientWidth;var x=Math.min(cards[k].offsetLeft-22,max);if(k!==0&&d.scrollLeft>=max-2)x=0;d.scrollTo({left:x,behavior:rm?'auto':'smooth'})},rm?4500:3200);
+})();
+</script>
+<script>(function(){try{if(!localStorage.getItem('dy_login'))return;var m=null;try{m=JSON.parse(localStorage.getItem('dy_me')||'null')}catch(e){}document.querySelectorAll('nav a.meet').forEach(function(a){a.textContent='Enter';a.setAttribute('aria-label','Enter your village')});var e=(location.pathname==='/'||location.pathname==='/index.html')&&document.querySelector('header .eyebrow');if(e&&m&&m.alias){e.textContent='Welcome home, '+m.alias+(m.room?' \u00b7 '+m.room:'')}}catch(x){}})();</script><canvas id="sky" aria-hidden="true"></canvas>
+<script id="sky-js">
+(function(){
+function slFlower(e,t,a,n,o){e.save(),e.translate(t,a),e.globalCompositeOperation="lighter";var i=e.createRadialGradient(0,0,0,0,0,1.6*n);i.addColorStop(0,"rgba(255,244,226,.10)"),i.addColorStop(.3,"rgba(241,227,201,.05)"),i.addColorStop(.7,"rgba(185,135,91,.04)"),i.addColorStop(1,"rgba(0,0,0,0)"),e.fillStyle=i,e.beginPath(),e.arc(0,0,1.6*n,0,7),e.fill(),e.save(),e.rotate(.02*-o);for(var r=0;r<32;r++){var s=n*(r%2?1.25:1.5)*(1+.05*Math.sin(1.3*o+r));e.strokeStyle="rgba(241,227,201,"+(r%2?.1:.18)+")",e.lineWidth=r%4?.6:1,e.beginPath(),e.moveTo(0,.3*-n),e.lineTo(0,-s),e.stroke(),e.rotate(Math.PI/16)}e.restore(),e.save(),e.rotate(.035*o);for(var l=0;l<56;l++){var d=l%8==0;e.fillStyle="rgba(241,227,201,"+(d?.8:.28)+")",e.beginPath(),e.arc(0,1.08*-n,d?2.4:1,0,7),e.fill(),e.rotate(2*Math.PI/56)}e.restore(),e.strokeStyle="rgba(216,180,131,.2)",e.lineWidth=.8,e.beginPath(),e.arc(0,0,1.08*n,0,7),e.stroke(),e.setLineDash([2,6]),e.beginPath(),e.arc(0,0,.92*n,0,7),e.stroke(),e.setLineDash([]),[[8,1,.62,.07,.03],[8,.66,.7,.11,-.05]].forEach(function(t,a){var i=t[0],r=n*t[1]*(1+.04*Math.sin(.7*o+a)),s=r*t[2],l=t[3];e.save(),e.rotate(o*t[4]+(a?Math.PI/8:0));for(var d=0;d<i;d++){e.save(),e.rotate(2*d*Math.PI/i);var c=.12*n;e.beginPath(),e.moveTo(0,-c),e.bezierCurveTo(s,-c-.1*r,1.05*s,.72*-r,0,-r),e.bezierCurveTo(1.05*-s,.72*-r,-s,-c-.1*r,0,-c),e.closePath();var p=e.createLinearGradient(0,-c,0,-r);p.addColorStop(0,"rgba(255,246,230,"+.6*l+")"),p.addColorStop(.6,"rgba(241,227,201,"+l+")"),p.addColorStop(1,"rgba(241,227,201,0)"),e.fillStyle=p,e.fill(),e.strokeStyle="rgba(255,246,230,"+4.5*l+")",e.lineWidth=1,e.stroke(),e.restore()}e.restore()}),e.save(),e.rotate(.1*o),e.fillStyle="rgba(255,250,240,.95)",e.beginPath();for(var c=0;c<16;c++){var p=c%2?.05*n:.16*n,u=c*Math.PI/8;e.lineTo(Math.cos(u)*p,Math.sin(u)*p)}e.closePath(),e.fill(),e.restore();var h=e.createRadialGradient(0,0,0,0,0,.3*n);h.addColorStop(0,"rgba(255,250,240,.9)"),h.addColorStop(1,"rgba(241,227,201,0)"),e.fillStyle=h,e.beginPath(),e.arc(0,0,.3*n,0,7),e.fill(),e.restore()}
+var SAND='216,180,131',BLUSH='241,227,201',EMBER='194,97,31';
+var rm=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+function rnd(a){var x=Math.sin(a*127.1+311.7)*43758.5453;return x-Math.floor(x)}
+function mkStars(n,w,h,seed){var a=[];for(var i=0;i<n;i++){a.push({x:rnd(i+seed)*w,y:rnd(i+seed+99)*h,r:.35+rnd(i+seed+7)*1.1,ph:rnd(i+seed+5)*6.3,sp:.4+rnd(i+seed+11)*1.2,w:rnd(i+seed+13)>.86})}return a}
+function lotus(c,x,y,n,o){c.save();c.translate(x,y);c.strokeStyle='rgba('+SAND+','+o+')';c.lineWidth=.8;for(var i=0;i<8;i++){c.rotate(Math.PI/4);c.beginPath();c.moveTo(0,0);c.quadraticCurveTo(.45*n,-.5*n,0,-n);c.quadraticCurveTo(-.45*n,-.5*n,0,0);c.stroke()}c.beginPath();c.arc(0,0,.18*n,0,7);c.stroke();c.restore()}
+/* arch geometry copied from the web app's Space frame */
+function geom(w,h){var m=Math.max(10,Math.min(16,.03*w)),apex=14,ry=Math.min(.34*w,.42*Math.min(h,900));return{m:m,apex:apex,ry:ry,spring:apex+ry,cx:w/2,rx:w/2-m}}
+function archPath(g,t,H){var p=new Path2D,n=g.m+t,o=g.rx-t,i=g.ry-t,r=g.spring,s=Math.max(5,.06*g.ry),l=[];for(var d=0;d<=9;d++){var c=d/9*Math.PI;l.push({x:g.cx-o*Math.cos(c),y:r-i*Math.sin(c)})}
+p.moveTo(n,H+4);p.lineTo(n,r);for(var q=0;q<9;q++){var u=l[q],h=l[q+1],v=(u.x+h.x)/2,f=(u.y+h.y)/2,mm=v-g.cx,b=f-r,gg=Math.hypot(mm,b)||1;p.quadraticCurveTo(v+mm/gg*s*2,f+b/gg*s*2,h.x,h.y)}p.lineTo(g.cx+o,H+4);return p}
+function archPt(g,u,inset){var a=Math.PI*u,o=g.rx-inset,i=g.ry-inset;return{x:g.cx-o*Math.cos(a),y:g.spring-i*Math.sin(a)}}
+function frame(c,g,w,h){var path=archPath(g,0,h);c.save();var gr=c.createLinearGradient(0,0,0,h);gr.addColorStop(0,'#22140c');gr.addColorStop(.5,'#160d08');gr.addColorStop(1,'#110a06');c.fillStyle=gr;var s=new Path2D;s.rect(0,0,w,h);s.addPath(path);c.fill(s,'evenodd');c.save();c.clip(s,'evenodd');
+ c.strokeStyle='rgba('+SAND+',.13)';c.lineWidth=1;for(var l=g.spring+8;l<h;l+=15){c.beginPath();c.moveTo(3,l);c.lineTo(g.m-3,l);c.moveTo(w-g.m+3,l);c.lineTo(w-3,l);c.stroke()}
+ var d=.5*g.m;c.strokeStyle='rgba('+SAND+',.2)';c.beginPath();c.moveTo(d,g.spring);c.lineTo(d,h);c.moveTo(w-d,g.spring);c.lineTo(w-d,h);c.stroke();
+ var cc=Math.min(13,.13*g.ry);lotus(c,g.m+1.6*cc,g.apex+1.4*cc,cc,.32);lotus(c,w-g.m-1.6*cc,g.apex+1.4*cc,cc,.32);c.restore();
+ c.strokeStyle='rgba('+SAND+',.62)';c.lineWidth=1.2;c.stroke(path);c.strokeStyle='rgba('+SAND+',.2)';c.lineWidth=1;c.stroke(archPath(g,6,h));
+ var p=g.cx,u=g.apex;c.fillStyle='rgba('+SAND+',.85)';c.beginPath();c.moveTo(p,u-8);c.quadraticCurveTo(p+3.4,u-3,p,u+.5);c.quadraticCurveTo(p-3.4,u-3,p,u-8);c.fill();c.strokeStyle='rgba('+SAND+',.5)';c.lineWidth=.8;c.beginPath();c.moveTo(p-16,u+3);c.lineTo(p-5,u+3);c.moveTo(p+5,u+3);c.lineTo(p+16,u+3);c.stroke();
+ var fd=c.createLinearGradient(0,h-170,0,h);fd.addColorStop(0,'rgba(11,6,4,0)');fd.addColorStop(1,'rgba(11,6,4,.9)');c.fillStyle=fd;c.fillRect(0,h-170,w,170);c.restore()}
+/* hero: arch window with rotating sky, a sun and the seven Temples on the arch */
+var hero=document.querySelector('header.hero'),hc=document.createElement('canvas');hc.id='hero-sky';hc.setAttribute('aria-hidden','true');hero.insertBefore(hc,hero.firstChild);
+var hx=hc.getContext('2d'),hw=0,hh=0,hd=1,hs=[],hg=null,hvis=true;
+var ROM=['I','II','III','IV','V','VI','VII'];
+function hsize(){var r=hero.getBoundingClientRect();hd=Math.min(window.devicePixelRatio||1,1.5);hw=r.width;hh=r.height;hc.width=Math.round(hw*hd);hc.height=Math.round(hh*hd);hg=geom(hw,hh);hs=mkStars(Math.round(Math.min(hw*Math.min(hh,1400)/3600,420)),hw*1.5,hw*1.5,40)}
+function hdraw(t){var c=hx,g=hg,w=hw,h=hh;c.setTransform(hd,0,0,hd,0,0);c.globalCompositeOperation='source-over';c.fillStyle='#0b0604';c.fillRect(0,0,w,h);
+ c.save();c.clip(archPath(g,0,h));
+ var gl=c.createRadialGradient(w/2,g.spring-g.ry*.2,0,w/2,g.spring-g.ry*.2,.8*Math.max(w,g.ry*2.4));gl.addColorStop(0,'rgba('+EMBER+',.10)');gl.addColorStop(.5,'rgba('+EMBER+',.03)');gl.addColorStop(1,'rgba(0,0,0,0)');c.fillStyle=gl;c.fillRect(0,0,w,h);
+ /* rotating star field about the arch centre */
+ var ang=t*.012,ca=Math.cos(ang),sa=Math.sin(ang),ox=w/2,oy=g.spring,R=w*.75;
+ for(var i=0;i<hs.length;i++){var s=hs[i],dx=s.x-w*.75,dy=s.y-w*.75,x=ox+dx*ca-dy*sa,y=oy+dx*sa+dy*ca;if(x<0||x>w||y<0||y>h)continue;var a=.3+.45*Math.sin(t*s.sp+s.ph);
+  c.fillStyle='rgba('+(s.w?SAND:BLUSH)+','+Math.max(.05,a*(s.w?.95:.7))+')';c.fillRect(x,y,s.r<.8?1:s.r*1.6,s.r<.8?1:s.r*1.6);
+  if(s.w&&s.r>1){c.strokeStyle='rgba('+BLUSH+','+(a*.25)+')';c.lineWidth=.6;c.beginPath();c.moveTo(x-4,y);c.lineTo(x+4,y);c.moveTo(x,y-4);c.lineTo(x,y+4);c.stroke()}}
+ c.globalCompositeOperation='lighter';
+ var mob=w<720,SR=g.ry*(mob?.55:.5);c.save();c.globalAlpha=mob?.45:.55;slFlower(c,w/2,g.apex+g.ry*.42,SR*.9,t);c.restore();
+ /* seven Temples along the arch */
+ var tr=Math.max(mob?11:17,g.ry*.085);
+ for(var k=0;k<7;k++){var u=(k+1)/8,p=archPt(g,u,Math.max(26,g.ry*.1));c.save();c.globalAlpha=.9;slFlower(c,p.x,p.y,tr,t+k*1.3);c.restore();
+  if(!mob){c.globalCompositeOperation='source-over';c.fillStyle='rgba('+SAND+',.7)';c.font='400 8px Michroma,sans-serif';c.textAlign='center';c.fillText(ROM[k],p.x,p.y+tr*1.9+8);c.globalCompositeOperation='lighter'}}
+ c.restore();c.globalCompositeOperation='source-over';frame(c,g,w,h)}
+/* temple cards: a small sky behind each statue */
+var cards=[].slice.call(document.querySelectorAll('.tc')).map(function(el,i){var cv=document.createElement('canvas');cv.className='cs';cv.setAttribute('aria-hidden','true');el.insertBefore(cv,el.firstChild);return{el:el,cv:cv,cx:cv.getContext('2d'),w:0,h:0,st:mkStars(46,400,500,300+i*50),i:i,vis:false}});
+function csize(o){var d=Math.min(window.devicePixelRatio||1,1.5),r=o.el.getBoundingClientRect();o.w=r.width;o.h=r.height;o.d=d;o.cv.width=Math.round(o.w*d);o.cv.height=Math.round(o.h*d)}
+function cdraw(o,t){var c=o.cx,w=o.w,h=o.h;if(!w)return;c.setTransform(o.d,0,0,o.d,0,0);c.globalCompositeOperation='source-over';c.clearRect(0,0,w,h);c.globalCompositeOperation='lighter';
+ var ang=t*.02*(o.i%2?-1:1),ca=Math.cos(ang),sa=Math.sin(ang),ox=w/2,oy=h*.36;
+ for(var i=0;i<o.st.length;i++){var s=o.st[i],dx=s.x/400*w*1.3-w*.65,dy=s.y/500*h*1.3-h*.65,x=ox+dx*ca-dy*sa,y=oy+dx*sa+dy*ca;if(x<0||x>w||y<0||y>h)continue;var a=.3+.5*Math.sin(t*s.sp+s.ph);c.fillStyle='rgba('+(s.w?SAND:BLUSH)+','+a*.9+')';c.fillRect(x,y,s.r<.8?1:s.r*1.5,s.r<.8?1:s.r*1.5)}
+ c.save();c.globalAlpha=.55;slFlower(c,w/2,oy,w*.36,t+o.i*2);c.restore()}
+if('IntersectionObserver' in window){var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.target===hero)hvis=e.isIntersecting;else cards.forEach(function(o){if(o.el===e.target)o.vis=e.isIntersecting})})},{rootMargin:'100px'});io.observe(hero);cards.forEach(function(o){io.observe(o.el)})}else{cards.forEach(function(o){o.vis=true})}
+/* page sky: fixed starfield, pilasters and drifting suns */
+var cv=document.getElementById('sky'),cx=cv.getContext('2d'),W=0,H=0,dpr=1,stars=[];
+function size(){dpr=Math.min(window.devicePixelRatio||1,2);W=innerWidth;H=innerHeight;cv.width=W*dpr;cv.height=H*dpr;stars=mkStars(Math.round(W*H/5200),W,H,1)}
+var A=[['club','l',.2,.9],['house','r',.55,.8],['membership','l',.25,1.0],['charter','r',.3,.85],['safeguards','l',.35,.8],['questions','r',.4,.9]];
+function pilasters(c,t){var m=Math.max(10,Math.min(16,.03*W)),d=.5*m;c.save();c.globalCompositeOperation='source-over';c.strokeStyle='rgba('+SAND+',.16)';c.lineWidth=1;c.beginPath();c.moveTo(d,0);c.lineTo(d,H);c.moveTo(W-d,0);c.lineTo(W-d,H);c.stroke();
+ var off=(scrollY%15);c.strokeStyle='rgba('+SAND+',.1)';c.beginPath();for(var l=-off;l<H;l+=15){c.moveTo(3,l);c.lineTo(m-3,l);c.moveTo(W-m+3,l);c.lineTo(W-3,l)}c.stroke();c.restore()}
+function page(t){var c=cx,sy=scrollY,mob=W<720;c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,W,H);c.globalCompositeOperation='lighter';
+ var ang=t*.004,ca=Math.cos(ang),sa=Math.sin(ang);
+ for(var i=0;i<stars.length;i++){var s=stars[i],yy=((s.y-sy*(.05+.3*rnd(i+3)))%H+H)%H,dx=s.x-W/2,dy=yy-H/2,x=W/2+dx*ca-dy*sa,y=H/2+dx*sa+dy*ca,a=.35+.4*Math.sin(t*s.sp+s.ph);
+  c.fillStyle='rgba('+(s.w?SAND:BLUSH)+','+(a*(s.w?.9:.7))+')';c.beginPath();c.arc(x,y,s.r,0,7);c.fill()}
+ var pts=[];for(var k=0;k<A.length;k++){var e=document.getElementById(A[k][0]);if(!e)continue;var r=e.getBoundingClientRect(),R=(mob?70:150)*A[k][3],y2=r.top+r.height*A[k][2],x2=A[k][1]=='l'?(mob?R*.05:R*.12):W-(mob?R*.05:R*.12);if(y2<-R*2||y2>H+R*2)continue;pts.push([x2,y2]);c.save();c.globalAlpha=mob?.4:.5;slFlower(c,x2,y2,R,t+k*1.7);c.restore()}
+ c.save();c.strokeStyle='rgba('+SAND+',.14)';c.lineWidth=.8;c.setLineDash([2,7]);for(var j=1;j<pts.length;j++){c.beginPath();c.moveTo(pts[j-1][0],pts[j-1][1]);c.quadraticCurveTo(W/2,(pts[j-1][1]+pts[j][1])/2,pts[j][0],pts[j][1]);c.stroke()}c.restore();pilasters(c,t)}
+function loop(ms){var t=rm?3:ms/1000;if(hvis)hdraw(t);for(var i=0;i<cards.length;i++)if(cards[i].vis)cdraw(cards[i],t);page(t);if(!rm)requestAnimationFrame(loop)}
+function all(){size();hsize();cards.forEach(csize);if(rm)loop(0)}
+all();addEventListener('resize',all);if('ResizeObserver' in window)new ResizeObserver(function(){hsize()}).observe(hero);
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(function(){hsize()});
+if(rm){addEventListener('scroll',function(){page(3)},{passive:true})}else requestAnimationFrame(loop);
+})();
+</script></body>
+</html>
